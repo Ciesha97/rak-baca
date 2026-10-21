@@ -1,0 +1,3 @@
+pdfjs-dist 6.4.299 (legacy build), https://github.com/mozilla/pdf.js
+Lisensi: Apache-2.0 (lihat LICENSE).
+jbig2.wasm dan openjpeg.wasm: lihat LICENSE-WASM.

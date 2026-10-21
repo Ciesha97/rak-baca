@@ -1,0 +1,24 @@
+{
+  "name": "rak-baca",
+  "productName": "Rak Baca",
+  "version": "1.0.0",
+  "description": "Pembaca dokumen universal: PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, gambar, dan komik",
+  "author": "Rak Baca",
+  "main": "app/main.js",
+  "scripts": { "start": "electron .", "dist:win": "electron-builder --win nsis portable --x64 --publish never", "dist:linux": "electron-builder --linux AppImage --publish never" },
+  "build": {
+    "appId": "id.rakbaca.desktop",
+    "productName": "Rak Baca",
+    "files": ["app/**/*"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "fileAssociations": [
+      { "ext": ["epub", "mobi", "prc", "fb2", "cbz"], "name": "Buku elektronik", "description": "Buku elektronik", "role": "Viewer", "icon": "build/icon.ico" },
+      { "ext": ["pdf", "docx", "odt", "rtf", "md", "markdown"], "name": "Dokumen", "description": "Dokumen", "role": "Viewer", "icon": "build/icon.ico" }
+    ],
+    "win": { "icon": "build/icon.ico", "signExecutable": false },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "Rak Baca", "installerIcon": "build/icon.ico", "uninstallerIcon": "build/icon.ico" },
+    "portable": { "artifactName": "Rak-Baca-Portable.exe" },
+    "linux": { "icon": "build/icon.png", "category": "Office" }
+  },
+  "devDependencies": { "electron": "44.6.0", "electron-builder": "26.15.7" }
+}

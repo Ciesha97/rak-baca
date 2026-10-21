@@ -1,0 +1,9 @@
+# hasil build dan sumbernya selalu LF supaya pemeriksaan "build sesuai src" sama di Windows & Linux
+src/** text eol=lf
+tools/** text eol=lf
+rak-baca.html text eol=lf
+desktop/app/index.html text eol=lf
+vendor/pdfjs/*.mjs text eol=lf
+*.wasm binary
+*.png binary
+*.ico binary
