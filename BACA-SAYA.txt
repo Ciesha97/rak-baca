@@ -29,8 +29,8 @@ Cara pakai:
   - Dokumen tersimpan di rak beserta posisi baca terakhir, penanda, dan sampulnya.
   - Tombol di bilah atas: Daftar isi, Cari, Penanda, Bacakan (suara), Aa (tampilan), Layar penuh.
   - Tampilan teks (EPUB, DOCX, TXT, ...): tema terang/sepia/gelap, huruf serif/sans/mono,
-    ukuran huruf, spasi baris, lebar teks, rata kanan-kiri, mode Halaman (dua kolom di layar
-    lebar) atau Gulir. Posisi baca tetap walau ukuran huruf diubah.
+    ukuran huruf, spasi baris, lebar teks, rata kanan-kiri, dan tata letak 1 kolom (bawaan),
+    2 kolom berdampingan di layar lebar, atau Gulir. Tombol C mengganti 1/2 kolom. Posisi baca tetap walau ukuran huruf diubah.
   - Tampilan PDF/komik: gulir atau per halaman, Otomatis / Pas lebar / Pas halaman / 100%,
     Ctrl + roda tetikus atau cubit dua jari untuk memperbesar, halaman gelap pada tema gelap.
   - Catatan kaki terbuka sebagai jendela kecil. Setelah melompat lewat tautan atau daftar isi,
@@ -42,7 +42,7 @@ Pintasan keyboard di layar baca:
   Home / End                                 awal / akhir dokumen
   Ctrl+F atau /                              cari
   T  daftar isi      B  tandai halaman      R  bacakan      F  layar penuh
-  M  mode fokus (sembunyikan bilah)          + / -  ukuran huruf atau perbesaran
+  M  mode fokus (sembunyikan bilah)          C  ganti 1 kolom / 2 kolom          + / -  ukuran huruf atau perbesaran
   Esc                                        tutup panel, lalu kembali ke rak
   Di rak: Ctrl+O membuka berkas, / ke kotak pencarian.
 

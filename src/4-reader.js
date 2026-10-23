@@ -325,8 +325,7 @@ const Reader = (() => {
         <div class="row"><label for="v-lh">Spasi baris</label><div class="ctl"><input type="range" id="v-lh" min="1.2" max="2.2" step="0.05" value="${s.lineHeight}"><span class="val" id="v-lhv">${s.lineHeight.toFixed(2)}</span></div></div>
         <div class="row"><span>Lebar teks</span>${seg('measure', [['sempit', 'Sempit'], ['sedang', 'Sedang'], ['lebar', 'Lebar'], ['penuh', 'Penuh']], s.measure)}</div>
         <div class="row"><span>Perataan</span>${seg('align', [['kiri', 'Rata kiri'], ['rata', 'Rata kanan-kiri']], s.align)}</div>
-        ${doc.scrollOnly ? '' : `<div class="row"><span>Tata letak</span>${seg('flowMode', [['paged', 'Halaman'], ['scroll', 'Gulir']], s.flowMode)}</div>
-        <label class="tgl">Dua kolom di layar lebar<input type="checkbox" data-c="twoCols" ${s.twoCols ? 'checked' : ''}></label>`}
+        ${doc.scrollOnly ? '' : `<div class="row"><span>Tata letak</span>${seg('layout', [['1', '1 kolom'], ['2', '2 kolom'], ['scroll', 'Gulir']], layoutOf(s))}</div>`}
         <label class="tgl">Indentasi awal paragraf<input type="checkbox" data-c="indent" ${s.indent ? 'checked' : ''}></label>`;
     } else if (doc) {
       h += `<div class="row"><span>Perbesaran</span><div class="ctl"><button class="btn" data-z="0.8" aria-label="Perkecil">${icon('minus')}</button><span class="val" id="v-z">${Math.round(view.scale * 100)}%</span><button class="btn" data-z="1.25" aria-label="Perbesar">${icon('plus')}</button></div>
@@ -346,6 +345,7 @@ const Reader = (() => {
       if (sg && t.dataset.v) {
         const k = sg.dataset.k, v = t.dataset.v;
         if (k === 'zoom') view.setZoom(v === '1' ? 1 : v);
+        else if (k === 'layout') Settings.set(v === 'scroll' ? { flowMode: 'scroll' } : { flowMode: 'paged', twoCols: v === '2' });
         else if (k === 'fxmode') { view.setMode(v); if (v === 'single' && view.zoom === 'width') view.setZoom('page'); }
         else Settings.set({ [k]: v });
         refreshPop();
@@ -355,6 +355,15 @@ const Reader = (() => {
     stage().append(pop);
     $('#rd-view').setAttribute('aria-expanded', 'true');
     pop.querySelector('button')?.focus();
+  }
+  /* tata letak teks: satu kolom selebar layar baca, dua kolom berdampingan, atau gulir */
+  const layoutOf = s => s.flowMode === 'scroll' ? 'scroll' : s.twoCols ? '2' : '1';
+  function toggleCols() {
+    if (doc?.kind !== 'flow' || doc.scrollOnly) return;
+    const two = !(Settings.get('flowMode') === 'paged' && Settings.get('twoCols'));
+    Settings.set({ flowMode: 'paged', twoCols: two });
+    toast(two ? 'Tampilan 2 kolom (bila layar cukup lebar)' : 'Tampilan 1 kolom');
+    refreshPop();
   }
   function refreshPop() { if (!pop) return; pop.remove(); pop = null; openPop(); }
   function closePop() { if (pop) { pop.remove(); pop = null; $('#rd-view').setAttribute('aria-expanded', 'false'); } }
@@ -400,6 +409,7 @@ const Reader = (() => {
     popMenu(btn, [
       { label: 'Info dokumen', icon: 'info', run: () => Shelf.info(book, doc) },
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
+      doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
       { label: 'Bacakan', icon: 'speak', run: () => TTS.toggle() },
       '-',
@@ -436,6 +446,7 @@ const Reader = (() => {
       case 'b': case 'B': toggleMark(); break;
       case 'f': case 'F': toggleFull(); break;
       case 'm': case 'M': toggleFocus(); break;
+      case 'c': case 'C': toggleCols(); break;
       case 'r': case 'R': TTS.toggle(); break;
       case '+': case '=': if (doc.kind === 'flow') Settings.set({ fontSize: clamp(Settings.get('fontSize') + 2, 12, 40) }); else view.zoomBy(1.15); break;
       case '-': case '_': if (doc.kind === 'flow') Settings.set({ fontSize: clamp(Settings.get('fontSize') - 2, 12, 40) }); else view.zoomBy(1 / 1.15); break;

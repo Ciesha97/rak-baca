@@ -136,10 +136,17 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
   ok(await page.getAttribute('#rd-mark', 'aria-pressed') === 'true', 'penanda halaman aktif');
   // pengaturan tampilan
   await page.click('#rd-view');
-  await page.click('.pop .seg[data-k="flowMode"] button[data-v="scroll"]');
+  ok(await page.evaluate(() => Reader.view.geo.cols) === 1, 'bawaan 1 kolom walau layar lebar');
+  await page.click('.pop .seg[data-k="layout"] button[data-v="2"]');
+  await page.waitForTimeout(300);
+  ok(await page.evaluate(() => Reader.view.geo.cols) === 2, 'pilihan 2 kolom di layar lebar');
+  await page.click('.pop .seg[data-k="layout"] button[data-v="1"]');
+  await page.waitForTimeout(300);
+  ok(await page.evaluate(() => Reader.view.geo.cols) === 1 && /Subbab|Bab Dua/.test(await text('#rd-sub')), 'kembali ke 1 kolom, posisi baca tetap');
+  await page.click('.pop .seg[data-k="layout"] button[data-v="scroll"]');
   await page.waitForTimeout(300);
   ok(await page.$eval('.flow', e => e.classList.contains('scroll')), 'mode gulir aktif');
-  await page.click('.pop .seg[data-k="flowMode"] button[data-v="paged"]');
+  await page.click('.pop .seg[data-k="layout"] button[data-v="1"]');
   await page.click('.pop [data-fs="1"]');
   await page.click('.pop [data-theme="dark"]');
   await page.waitForTimeout(200);

@@ -92,7 +92,7 @@ function findAll(text, q, limit = 1e6) {
 /* ================= Pengaturan (per perangkat) ================= */
 const Settings = (() => {
   const KEY = 'rakbaca.settings.v1';
-  const DEF = { theme: 'auto', font: 'serif', fontSize: 19, lineHeight: 1.6, measure: 'sedang', align: 'kiri', flowMode: 'paged', twoCols: true, indent: false, darkPages: true, ttsRate: 1, ttsVoice: '', sort: 'opened' };
+  const DEF = { theme: 'auto', font: 'serif', fontSize: 19, lineHeight: 1.6, measure: 'sedang', align: 'kiri', flowMode: 'paged', twoCols: false, indent: false, darkPages: true, ttsRate: 1, ttsVoice: '', sort: 'opened' };
   let s = { ...DEF };
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* penyimpanan tidak tersedia */ }
   const subs = new Set();
@@ -193,6 +193,7 @@ function popMenu(anchor, items) {
   if (menuClose) menuClose();
   const m = el('div', { class: 'menu', role: 'menu' });
   for (const it of items) {
+    if (!it) continue;
     if (it === '-') { m.append(el('hr')); continue; }
     const b = el('button', { role: 'menuitem', class: it.danger ? 'danger' : '' });
     b.innerHTML = (it.icon ? icon(it.icon) : '') + esc(it.label);
