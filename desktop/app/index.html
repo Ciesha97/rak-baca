@@ -239,6 +239,29 @@ dialog::backdrop{background:var(--scrim)}
 .note-pop .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;font-family:var(--f-ui)}
 .note-pop .acts .btn{min-height:34px;padding:0 12px;font-size:13px}
 
+/* catatan */
+.notes-tools{display:flex;gap:6px;flex-wrap:wrap;padding:0 4px 10px}
+.notes-tools .btn{min-height:36px;padding:0 12px;font-size:13px}
+.note-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.note-list li{display:flex;align-items:flex-start;gap:2px;border-bottom:1px solid var(--line)}
+.note-list .go{flex:1;min-width:0;display:block;border:0;background:none;text-align:left;padding:10px;border-radius:8px;color:var(--ink);font-size:13.5px;line-height:1.45}
+.note-list .go:hover{background:var(--surface-2)}
+.note-list small{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.note-list q{display:block;font:italic 14px/1.5 var(--f-serif);color:var(--ink-2);border-left:3px solid var(--line-2);padding-left:9px;margin-bottom:6px;quotes:"\201C" "\201D"}
+.note-list .ins{display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+.note-ed{gap:12px}
+.note-ed label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.note-ed textarea{font:15px/1.5 var(--f-ui);color:var(--ink);text-transform:none;letter-spacing:0;font-weight:400;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);padding:10px 12px;resize:vertical;min-height:70px}
+.note-ed textarea[data-f="quote"]{font-family:var(--f-serif);font-style:italic}
+.note-ed textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+dialog:has(.note-ed){width:min(600px,calc(100vw - 32px))}
+.sel-chip{position:absolute;z-index:34;display:flex;background:var(--ink);color:var(--bg);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.sel-chip button{display:flex;align-items:center;gap:6px;border:0;background:none;color:inherit;padding:8px 12px;font-size:13px;font-weight:600}
+.sel-chip button+button{border-left:1px solid color-mix(in srgb,var(--bg) 25%,transparent)}
+.sel-chip button:hover{background:color-mix(in srgb,var(--bg) 15%,transparent)}
+.sel-chip .ic{width:16px;height:16px}
+::highlight(rb-note){background-color:rgba(120,190,120,.3)}
+
 /* terjemahan */
 .tr-pop{position:absolute;z-index:36;left:50%;bottom:16px;transform:translateX(-50%);width:min(720px,calc(100% - 24px));max-height:62%;display:flex;flex-direction:column;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 .tr-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 16px;border-bottom:1px solid var(--line)}
@@ -392,6 +415,7 @@ dialog::backdrop{background:var(--scrim)}
   <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="1.5" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 5 9 12l10 7zM5 5v14"/></symbol>
   <symbol id="i-next" viewBox="0 0 24 24"><path d="m5 5 10 7-10 7zM19 5v14"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-translate" viewBox="0 0 24 24"><path d="M3 5h10M8 3v2M5 5c.5 3.5 3 6.5 7 8M11 5c-.5 3.5-3 6.5-7 8"/><path d="m13 21 4-9 4 9M14.4 18h5.2"/></symbol>
 </svg>
@@ -437,6 +461,7 @@ dialog::backdrop{background:var(--scrim)}
       <button class="icon-btn" id="rd-toc" title="Daftar isi (T)" aria-label="Daftar isi"><svg class="ic"><use href="#i-toc"/></svg></button>
       <button class="icon-btn" id="rd-search" title="Cari (Ctrl+F)" aria-label="Cari di dokumen"><svg class="ic"><use href="#i-search"/></svg></button>
       <button class="icon-btn" id="rd-mark" title="Tandai halaman ini (B)" aria-label="Tandai halaman ini" aria-pressed="false"><svg class="ic"><use href="#i-bookmark"/></svg></button>
+      <button class="icon-btn" id="rd-note" title="Catatan (N)" aria-label="Catatan"><svg class="ic"><use href="#i-note"/></svg></button>
       <button class="icon-btn" id="rd-tr" title="Terjemahkan ke bahasa Indonesia (E)" aria-label="Terjemahkan ke bahasa Indonesia"><svg class="ic"><use href="#i-translate"/></svg></button>
       <button class="icon-btn wide-only" id="rd-tts" title="Bacakan (R)" aria-label="Bacakan"><svg class="ic"><use href="#i-speak"/></svg></button>
       <button class="icon-btn" id="rd-view" title="Tampilan" aria-label="Pengaturan tampilan" aria-expanded="false"><span class="aa">Aa</span></button>
@@ -896,6 +921,29 @@ async function openZip(blob) {
       return new Blob([b], { type: type || sniffImage(b) || IMG_EXT[extOf(path)] || 'application/octet-stream' });
     },
   };
+}
+/* ZIP tanpa kompresi (untuk membuat .docx) */
+const CRC_T = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function makeZip(files, type) {
+  const enc = new TextEncoder(), parts = [], cd = [];
+  let off = 0;
+  for (const [name, content] of files) {
+    const data = typeof content === 'string' ? enc.encode(content) : content, nb = enc.encode(name), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x800, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nb.length, true);
+    parts.push(h.buffer, nb, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x800, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, nb.length, true); c.setUint32(42, off, true);
+    cd.push(c.buffer, nb);
+    off += 30 + nb.length + data.length;
+  }
+  const size = cd.reduce((t, x) => t + x.byteLength, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cd, e.buffer], { type: type || 'application/zip' });
 }
 function resolvePath(base, rel) {
   rel = String(rel || '').split('#')[0].split('?')[0];
@@ -3004,7 +3052,7 @@ class FlowView {
 const isNoteLike = a => /^\s*[[(]?(\d{1,3}|[*†‡§]+|[ivx]{1,4})[\])]?\s*$/i.test(a.textContent) && (a.closest('sup') || a.querySelector('sup') || /^\s*\[/.test(a.textContent));
 const HL = typeof CSS !== 'undefined' && CSS.highlights && typeof Highlight !== 'undefined';
 function setHighlight(name, ranges) { if (HL) { if (ranges.length) CSS.highlights.set(name, new Highlight(...ranges)); else CSS.highlights.delete(name); } }
-function clearHighlights() { if (HL) for (const n of ['rb-hit', 'rb-cur', 'rb-tts']) CSS.highlights.delete(n); }
+function clearHighlights() { if (HL) for (const n of ['rb-hit', 'rb-cur', 'rb-tts', 'rb-note']) CSS.highlights.delete(n); }
 
 /* ================= Tampilan halaman tetap (PDF, gambar, komik) ================= */
 class FixedView {
@@ -3390,6 +3438,7 @@ const Reader = (() => {
     token++;
     TTS.stop();
     Translate.close();
+    Notes.hideChip(); onChange.sec = -1;
     closePanel(); closePop(); closeNote();
     if (backBtn) { backBtn.remove(); backBtn = null; }
     if (view) { persist(); view.destroy(); view = null; }
@@ -3457,6 +3506,7 @@ const Reader = (() => {
     mb.setAttribute('aria-pressed', String(marked));
     mb.innerHTML = icon(marked ? 'bookmark-on' : 'bookmark');
     if (panel?.tab === 'toc') markToc();
+    if (doc.kind === 'flow' && view.sec !== onChange.sec) { onChange.sec = view.sec; Notes.mark(); }
     saveSoon();
   }
   function next() { if (!view) return; if (!view.next() && doc.kind === 'fixed') toast('Ini halaman terakhir'); TTS.resync(); }
@@ -3484,7 +3534,7 @@ const Reader = (() => {
     if (!panel) {
       const scrim = el('div', { class: 'panel-scrim' });
       const box = el('aside', { class: 'panel', role: 'dialog', 'aria-label': 'Navigasi dokumen' });
-      box.innerHTML = `<div class="panel-head"><div class="tabs" role="tablist"><button role="tab" data-t="toc">Daftar isi</button><button role="tab" data-t="marks">Penanda</button><button role="tab" data-t="search">Cari</button></div><button class="icon-btn" data-x title="Tutup (Esc)" aria-label="Tutup">${icon('x')}</button></div><div class="panel-body"></div>`;
+      box.innerHTML = `<div class="panel-head"><div class="tabs" role="tablist"><button role="tab" data-t="toc">Daftar isi</button><button role="tab" data-t="marks">Penanda</button><button role="tab" data-t="notes">Catatan</button><button role="tab" data-t="search">Cari</button></div><button class="icon-btn" data-x title="Tutup (Esc)" aria-label="Tutup">${icon('x')}</button></div><div class="panel-body"></div>`;
       scrim.onclick = closePanel;
       box.querySelector('[data-x]').onclick = closePanel;
       box.querySelector('.tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) setTab(b.dataset.t); };
@@ -3497,7 +3547,7 @@ const Reader = (() => {
   function setTab(t) {
     panel.tab = t;
     for (const b of panel.box.querySelectorAll('[data-t]')) b.setAttribute('aria-selected', String(b.dataset.t === t));
-    if (t === 'toc') renderToc(); else if (t === 'marks') renderMarks(); else renderSearch();
+    if (t === 'toc') renderToc(); else if (t === 'marks') renderMarks(); else if (t === 'notes') Notes.renderPanel(panel.body); else renderSearch();
   }
   const narrow = () => innerWidth < 900;
   function renderToc() {
@@ -3742,6 +3792,7 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
+      { label: 'Catatan', icon: 'note', run: () => openPanel('notes') },
       { label: 'Terjemahkan ke bahasa Indonesia', icon: 'translate', run: () => Translate.open() },
       { label: 'Bacakan', icon: 'speak', run: () => TTS.toggle() },
       '-',
@@ -3776,6 +3827,7 @@ const Reader = (() => {
       case 't': case 'T': openPanel('toc'); break;
       case '/': e.preventDefault(); openPanel('search'); break;
       case 'b': case 'B': toggleMark(); break;
+      case 'n': case 'N': Notes.fromSelection(); break;
       case 'f': case 'F': toggleFull(); break;
       case 'm': case 'M': toggleFocus(); break;
       case 'c': case 'C': toggleCols(); break;
@@ -3790,6 +3842,7 @@ const Reader = (() => {
     $('#rd-toc').onclick = () => (panel?.tab === 'toc' ? closePanel() : doc && openPanel('toc'));
     $('#rd-search').onclick = () => (panel?.tab === 'search' ? closePanel() : doc && openPanel('search'));
     $('#rd-mark').onclick = toggleMark;
+    $('#rd-note').onclick = () => (panel?.tab === 'notes' && !getSelection()?.toString() ? closePanel() : doc && Notes.fromSelection());
     $('#rd-tts').onclick = () => TTS.toggle();
     $('#rd-tr').onclick = () => Translate.open();
     $('#rd-view').onclick = () => doc && openPop();
@@ -3809,7 +3862,8 @@ const Reader = (() => {
     document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); });
     matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (view && doc?.kind === 'fixed') view.apply(Settings.all()); });
   }
-  return { open, close, isOpen, bind, get view() { return view; }, get doc() { return doc; }, get book() { return book; } };
+  const refreshPanel = t => { if (panel && panel.tab === t) setTab(t); };
+  return { open, close, isOpen, bind, persist, posRecord, openPanel, closePanel, refreshPanel, jumpTo: p => { rememberJump(); goPos(p); }, get view() { return view; }, get doc() { return doc; }, get book() { return book; } };
 })();
 
 /* ================= Bacakan (suara) ================= */
@@ -4087,6 +4141,244 @@ const Translate = (() => {
   }
   return { open, close, isOpen };
 })();
+/* ================= Catatan: kutipan + insight, ekspor ke Word ================= */
+const Notes = (() => {
+  let chip = null, chipSel = '';
+
+  /* lokasi kutipan: blok/halaman tempat pilihan teks dimulai */
+  function posOf(node) {
+    const v = Reader.view, d = Reader.doc;
+    const e = node && (node.nodeType === 1 ? node : node.parentElement);
+    if (d.kind === 'flow') {
+      const bl = v.blocks();
+      const b = e ? bl.findIndex(x => x === e || x.contains(e) || e.contains(x)) : -1;
+      if (b >= 0) return { kind: 'flow', s: v.sec, b, o: 0 };
+    } else {
+      const pg = e?.closest('.pgv');
+      if (pg) return { kind: 'fixed', p: +pg.dataset.i, y: 0 };
+    }
+    return Reader.posRecord();
+  }
+  function whereOf(p) {
+    const d = Reader.doc, v = Reader.view;
+    if (p.kind === 'fixed') return 'Halaman ' + (p.p + 1);
+    // judul bab terdekat di atas kutipan
+    if (v.sec === p.s) {
+      const bl = v.blocks();
+      for (let i = Math.min(p.b, bl.length - 1); i >= 0; i--) if (/^h[1-3]$/.test(bl[i].localName)) { const h = txt(bl[i]); if (h) return h.slice(0, 120); }
+    }
+    const t = d.sections[p.s]?.title;
+    return t || (d.sections.length > 1 ? 'Bagian ' + (p.s + 1) : '');
+  }
+  const selText = () => {
+    const s = getSelection();
+    if (!s || s.isCollapsed || !$('#stage').contains(s.anchorNode)) return '';
+    if (s.anchorNode && s.anchorNode.parentElement?.closest('.tr-pop,.panel,.pop,.note-pop,dialog')) return '';
+    // nomor catatan kaki tidak ikut; antarblok dipisah baris baru
+    const f = s.getRangeAt(0).cloneContents();
+    f.querySelectorAll('a[data-note], .links').forEach(x => (x.closest('sup') && x.closest('sup').textContent === x.textContent ? x.closest('sup') : x).remove());
+    let out = '';
+    const walk = n => {
+      for (const c of n.childNodes) {
+        if (c.nodeType === 3) out += c.data;
+        else if (c.nodeType === 1) {
+          if (c.localName === 'br') { out += '\n'; continue; }
+          const block = /^(p|div|li|h[1-6]|blockquote|tr|pre|dd|dt|figcaption|section)$/.test(c.localName);
+          if (block && out && !out.endsWith('\n')) out += '\n';
+          walk(c);
+          if (block) out += '\n';
+        }
+      }
+    };
+    walk(f);
+    return (out.trim() ? out : s.toString()).replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  };
+
+  /* ---------- editor ---------- */
+  function editor(n, isNew) {
+    const d = $('#dlg');
+    return new Promise(resolve => {
+      d.innerHTML = `<div class="dlg note-ed"><h2>${isNew ? 'Catatan baru' : 'Ubah catatan'}</h2>
+        <label>Kutipan dari bacaan<textarea data-f="quote" rows="4" placeholder="Tempel atau ketik kutipan (boleh kosong)">${esc(n.quote || '')}</textarea></label>
+        <label>Insight saya<textarea data-f="note" rows="5" placeholder="Tulis pemikiran, ringkasan, atau pertanyaan Anda…">${esc(n.note || '')}</textarea></label>
+        <p class="muted" style="margin:0;font-size:12.5px">${esc(n.where ? n.where + ' · ' : '')}${n.progress != null ? Math.round(n.progress * 100) + '%' : ''}</p>
+        <div class="acts">${isNew ? '' : '<button class="btn danger" data-a="del" style="margin-right:auto">Hapus</button>'}<button class="btn" data-a="no">Batal</button><button class="btn primary" data-a="ok">Simpan</button></div></div>`;
+      const q = $('[data-f="quote"]', d), t = $('[data-f="note"]', d);
+      let done = false;
+      const finish = v => { if (done) return; done = true; d.close(); resolve(v); };
+      d.onclick = e => {
+        const a = e.target.closest('[data-a]')?.dataset.a;
+        if (a === 'ok') finish({ quote: q.value.trim(), note: t.value.trim() });
+        else if (a === 'del') finish('del');
+        else if (a === 'no' || e.target === d) finish(null);
+      };
+      d.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish({ quote: q.value.trim(), note: t.value.trim() }); } };
+      d.oncancel = e => { e.preventDefault(); finish(null); };
+      d.showModal();
+      (n.quote && !n.note ? t : q.value ? t : q).focus();
+    });
+  }
+  function save() { Reader.persist(); Reader.refreshPanel('notes'); mark(); }
+  async function add(quote) {
+    const book = Reader.book;
+    if (!book || !Reader.view) return;
+    const s = getSelection();
+    const p = quote ? posOf(s?.anchorNode) : Reader.posRecord();
+    const n = { id: uid(), quote: quote || '', note: '', pos: p, where: whereOf(p), progress: Reader.view.progress(), at: Date.now() };
+    hideChip();
+    const r = await editor(n, true);
+    if (!r || (!r.quote && !r.note)) return;
+    Object.assign(n, r);
+    (book.notes = book.notes || []).push(n);
+    book.notes.sort((a, b) => (a.progress - b.progress) || (a.at - b.at));
+    s?.removeAllRanges();
+    save();
+    toast('Catatan disimpan');
+  }
+  async function edit(n) {
+    const book = Reader.book || Shelf.books.find(b => b.notes?.includes(n));
+    const r = await editor(n, false);
+    if (!r) return;
+    if (r === 'del') {
+      if (!(await ask({ title: 'Hapus catatan?', body: '<p>Kutipan dan insight ini akan dihapus.</p>', ok: 'Hapus', danger: true }))) return;
+      book.notes = book.notes.filter(x => x !== n);
+    } else { Object.assign(n, r, { edited: Date.now() }); }
+    save();
+  }
+  /* catatan dari tombol: dengan kutipan bila ada teks terpilih, kosong bila tidak */
+  function fromSelection() { const t = selText(); if (t) add(t); else Reader.openPanel('notes'); }
+
+  /* ---------- panel ---------- */
+  function renderPanel(body) {
+    const book = Reader.book;
+    const list = book?.notes || [];
+    body.innerHTML = `<div class="notes-tools"><button class="btn primary" data-n="new">${icon('plus')}Catatan baru</button>${list.length ? `<button class="btn" data-n="docx">${icon('download')}Word</button><button class="btn" data-n="copy">Salin semua</button>` : ''}</div>`;
+    if (!list.length) body.insertAdjacentHTML('beforeend', '<p class="p-empty">Belum ada catatan. Blok teks saat membaca lalu tekan <b>Catat</b>, atau tekan tombol N. Kutipan tersimpan bersama insight Anda dan bisa diekspor ke Word.</p>');
+    const ul = el('ul', { class: 'note-list' });
+    for (const n of list) {
+      const li = el('li');
+      li.innerHTML = `<button class="go"><small>${esc(n.where || '')}${n.where ? ' · ' : ''}${Math.round((n.progress || 0) * 100)}% · ${esc(fmtAgo(n.at))}</small>${n.quote ? `<q>${esc(n.quote.length > 400 ? n.quote.slice(0, 400) + '…' : n.quote)}</q>` : ''}${n.note ? `<span class="ins">${esc(n.note)}</span>` : ''}</button><button class="icon-btn" data-e title="Ubah catatan" aria-label="Ubah catatan">${icon('more')}</button>`;
+      $('.go', li).onclick = () => { Reader.jumpTo(n.pos); if (innerWidth < 900) Reader.closePanel(); };
+      $('[data-e]', li).onclick = () => edit(n);
+      ul.append(li);
+    }
+    body.append(ul);
+    body.querySelector('[data-n="new"]').onclick = () => add('');
+    const dx = body.querySelector('[data-n="docx"]'); if (dx) dx.onclick = () => exportDocx(book);
+    const cp = body.querySelector('[data-n="copy"]'); if (cp) cp.onclick = () => copyAll(book);
+  }
+
+  /* ---------- sorotan kutipan di teks ---------- */
+  function mark() {
+    const v = Reader.view, d = Reader.doc, book = Reader.book;
+    if (!v || !d || d.kind !== 'flow' || typeof Highlight === 'undefined' || !CSS.highlights) return;
+    const mine = (book.notes || []).filter(n => n.quote && n.pos?.kind === 'flow' && n.pos.s === v.sec);
+    if (!mine.length) { CSS.highlights.delete('rb-note'); return; }
+    const map = v.textMap(), ranges = [];
+    for (const n of mine) {
+      // cocokkan awal & akhir kutipan saja: kutipan bisa beda sedikit (baris baru, nomor catatan kaki dibuang)
+      const q = n.quote.replace(/\s+/g, ' ').trim();
+      const lines = n.quote.split(/\n+/).map(x => x.trim()).filter(Boolean);
+      const head = findAll(map.text, foldQuery(lines[0].slice(0, 40)), 50);
+      if (!head.length) continue;
+      const tail = foldQuery(lines[lines.length - 1].slice(-30));
+      let best = null;
+      for (const [a] of head) {
+        const t = findAll(map.text.slice(a, a + q.length * 2 + 200), tail, 1)[0];
+        if (t) { best = [a, a + t[1]]; break; }
+      }
+      best = best || [head[0][0], head[0][1]];
+      ranges.push(v.rangeOf(map, best[0], best[1]));
+    }
+    if (ranges.length) CSS.highlights.set('rb-note', new Highlight(...ranges)); else CSS.highlights.delete('rb-note');
+  }
+
+  /* ---------- tombol kecil di atas teks yang diblok ---------- */
+  function hideChip() { chip?.remove(); chip = null; }
+  const onSel = debounce(() => {
+    const t = selText();
+    if (!t || !Reader.view || $('#dlg').open) { hideChip(); return; }
+    const r = getSelection().getRangeAt(0).getBoundingClientRect(), st = $('#stage').getBoundingClientRect();
+    if (!r.width && !r.height) { hideChip(); return; }
+    if (!chip) {
+      chip = el('div', { class: 'sel-chip', role: 'toolbar', 'aria-label': 'Teks terpilih' });
+      chip.innerHTML = `<button data-c="note">${icon('note')}Catat</button><button data-c="tr">${icon('translate')}Terjemahkan</button><button data-c="copy">Salin</button>`;
+      chip.addEventListener('pointerdown', e => e.preventDefault());
+      chip.addEventListener('click', e => {
+        const c = e.target.closest('[data-c]')?.dataset.c;
+        if (c === 'note') add(chipSel);
+        else if (c === 'tr') { hideChip(); Translate.open(); }
+        else if (c === 'copy') { navigator.clipboard?.writeText(chipSel).then(() => toast('Teks disalin'), () => toast('Tekan Ctrl+C untuk menyalin', 'bad')); hideChip(); }
+      });
+      $('#stage').append(chip);
+    }
+    chipSel = t;
+    const w = chip.offsetWidth, h = chip.offsetHeight;
+    const above = r.top - st.top - h - 10;
+    chip.style.left = clamp(r.left - st.left + r.width / 2 - w / 2, 8, st.width - w - 8) + 'px';
+    chip.style.top = (above > 4 ? above : Math.min(r.bottom - st.top + 10, st.height - h - 8)) + 'px';
+  }, 180);
+  document.addEventListener('selectionchange', onSel);
+
+  /* ---------- ekspor ---------- */
+  function plain(book) {
+    const lines = [`Catatan: ${book.title}`, book.author ? `Penulis: ${book.author}` : '', ''];
+    (book.notes || []).forEach((n, i) => {
+      lines.push(`${i + 1}. ${n.where ? n.where + ' · ' : ''}${Math.round((n.progress || 0) * 100)}%`);
+      if (n.quote) lines.push(`“${n.quote}”`);
+      if (n.note) lines.push(`Insight: ${n.note}`);
+      lines.push('');
+    });
+    return lines.filter((l, i) => l || i > 2).join('\n').trim() + '\n';
+  }
+  async function copyAll(book) {
+    try { await navigator.clipboard.writeText(plain(book)); toast('Semua catatan disalin'); }
+    catch (e) { toast('Tidak bisa menyalin di sini; pakai ekspor Word.', 'bad'); }
+  }
+  const X = s => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const run = (t, rpr = '') => String(t).split(/\r?\n/).map((line, i) => `<w:r>${rpr ? `<w:rPr>${rpr}</w:rPr>` : ''}${i ? '<w:br/>' : ''}<w:t xml:space="preserve">${X(line)}</w:t></w:r>`).join('');
+  const para = (content, style) => `<w:p>${style ? `<w:pPr><w:pStyle w:val="${style}"/></w:pPr>` : ''}${content}</w:p>`;
+  function docxBlob(book) {
+    const now = new Date();
+    const body = [
+      para(run('Catatan Bacaan'), 'Title'),
+      para(run(book.title) + (book.author ? run(' — ' + book.author) : ''), 'Subtitle'),
+      para(run(`${book.notes.length} catatan · diekspor ${fmtDate(now)} dari Rak Baca`), 'Meta'),
+    ];
+    book.notes.forEach((n, i) => {
+      body.push(para(run(`${i + 1}. ${n.where ? n.where + ' · ' : ''}${Math.round((n.progress || 0) * 100)}%`), 'Heading2'));
+      if (n.quote) body.push(para(run('“' + n.quote + '”'), 'Quote'));
+      if (n.note) body.push(para(run('Insight saya: ', '<w:b/><w:color w:val="8B3A2B"/>') + run(n.note)));
+    });
+    const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+    const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${W}><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const st = (id, name, ppr, rpr, extra = '') => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/>${extra}<w:qFormat/>${ppr ? `<w:pPr>${ppr}</w:pPr>` : ''}${rpr ? `<w:rPr>${rpr}</w:rPr>` : ''}</w:style>`;
+    const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="id-ID"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>`
+      + `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>`
+      + st('Title', 'Title', '<w:spacing w:after="80"/>', '<w:rFonts w:ascii="Cambria" w:hAnsi="Cambria"/><w:b/><w:sz w:val="44"/><w:szCs w:val="44"/>')
+      + st('Subtitle', 'Subtitle', '<w:spacing w:after="40"/>', '<w:i/><w:color w:val="404040"/><w:sz w:val="28"/><w:szCs w:val="28"/>')
+      + st('Meta', 'Meta', '<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="6" w:color="CDC2AE"/></w:pBdr><w:spacing w:after="240"/>', '<w:color w:val="7B7166"/><w:sz w:val="18"/><w:szCs w:val="18"/>')
+      + st('Heading2', 'heading 2', '<w:keepNext/><w:spacing w:before="320" w:after="80"/><w:outlineLvl w:val="1"/>', '<w:b/><w:color w:val="8B3A2B"/><w:sz w:val="24"/><w:szCs w:val="24"/>')
+      + st('Quote', 'Quote', '<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="CDC2AE"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="F7F2E8"/><w:ind w:left="284" w:right="284"/>', '<w:i/><w:color w:val="3D3229"/>')
+      + `</w:styles>`;
+    const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${X('Catatan: ' + book.title)}</dc:title><dc:creator>Rak Baca</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now.toISOString().replace(/\.\d+Z$/, 'Z')}</dcterms:created></cp:coreProperties>`;
+    return makeZip([
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>'],
+      ['word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['word/document.xml', doc],
+      ['word/styles.xml', styles],
+      ['docProps/core.xml', core],
+    ], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  }
+  function exportDocx(book) {
+    if (!book?.notes?.length) { toast('Belum ada catatan untuk diekspor.', 'bad'); return; }
+    const name = ('Catatan - ' + book.title).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) + '.docx';
+    download(docxBlob(book), name);
+    toast('Berkas Word dibuat: ' + name);
+  }
+  return { add, fromSelection, renderPanel, mark, exportDocx, copyAll, docxBlob, hideChip };
+})();
 /* ================= Rak ================= */
 const Shelf = (() => {
   let books = [], filter = 'all', query = '';
@@ -4268,7 +4560,7 @@ const Shelf = (() => {
       doc?.kind === 'fixed' || b.pages ? ['Halaman', NF.format(doc?.pageCount || b.pages)] : (doc?.sections || b.sections) ? ['Bagian', NF.format(doc?.sections?.length || b.sections)] : null,
       doc?.lang ? ['Bahasa', doc.lang] : null,
       ['Ditambahkan', fmtDate(b.added)], ['Terakhir dibaca', b.opened ? fmtAgo(b.opened) : 'Belum pernah'],
-      ['Kemajuan', Math.round((b.progress || 0) * 100) + '%'], ['Penanda', String(b.bookmarks?.length || 0)],
+      ['Kemajuan', Math.round((b.progress || 0) * 100) + '%'], ['Penanda', String(b.bookmarks?.length || 0)], ['Catatan', String(b.notes?.length || 0)],
       ['Penyimpanan', b.stored ? 'Tersimpan di perangkat ini' : 'Sementara (hilang saat halaman ditutup)'],
     ].filter(Boolean);
     ask({ title: 'Info dokumen', body: `<dl class="kv">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`, ok: 'Tutup', cancel: false });
@@ -4299,6 +4591,7 @@ const Shelf = (() => {
           { label: 'Buka', icon: 'book', run: () => App.openBook(b.id) },
           { label: 'Info dokumen', icon: 'info', run: () => info(b) },
           { label: 'Unduh berkas asli', icon: 'download', run: () => downloadFile(b) },
+          b.notes?.length ? { label: `Ekspor ${b.notes.length} catatan ke Word`, icon: 'note', run: () => Notes.exportDocx(b) } : null,
           '-',
           { label: 'Hapus dari rak', icon: 'trash', danger: true, run: () => remove(b) },
         ]);

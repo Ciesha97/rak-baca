@@ -61,6 +61,7 @@ const Reader = (() => {
     token++;
     TTS.stop();
     Translate.close();
+    Notes.hideChip(); onChange.sec = -1;
     closePanel(); closePop(); closeNote();
     if (backBtn) { backBtn.remove(); backBtn = null; }
     if (view) { persist(); view.destroy(); view = null; }
@@ -128,6 +129,7 @@ const Reader = (() => {
     mb.setAttribute('aria-pressed', String(marked));
     mb.innerHTML = icon(marked ? 'bookmark-on' : 'bookmark');
     if (panel?.tab === 'toc') markToc();
+    if (doc.kind === 'flow' && view.sec !== onChange.sec) { onChange.sec = view.sec; Notes.mark(); }
     saveSoon();
   }
   function next() { if (!view) return; if (!view.next() && doc.kind === 'fixed') toast('Ini halaman terakhir'); TTS.resync(); }
@@ -155,7 +157,7 @@ const Reader = (() => {
     if (!panel) {
       const scrim = el('div', { class: 'panel-scrim' });
       const box = el('aside', { class: 'panel', role: 'dialog', 'aria-label': 'Navigasi dokumen' });
-      box.innerHTML = `<div class="panel-head"><div class="tabs" role="tablist"><button role="tab" data-t="toc">Daftar isi</button><button role="tab" data-t="marks">Penanda</button><button role="tab" data-t="search">Cari</button></div><button class="icon-btn" data-x title="Tutup (Esc)" aria-label="Tutup">${icon('x')}</button></div><div class="panel-body"></div>`;
+      box.innerHTML = `<div class="panel-head"><div class="tabs" role="tablist"><button role="tab" data-t="toc">Daftar isi</button><button role="tab" data-t="marks">Penanda</button><button role="tab" data-t="notes">Catatan</button><button role="tab" data-t="search">Cari</button></div><button class="icon-btn" data-x title="Tutup (Esc)" aria-label="Tutup">${icon('x')}</button></div><div class="panel-body"></div>`;
       scrim.onclick = closePanel;
       box.querySelector('[data-x]').onclick = closePanel;
       box.querySelector('.tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) setTab(b.dataset.t); };
@@ -168,7 +170,7 @@ const Reader = (() => {
   function setTab(t) {
     panel.tab = t;
     for (const b of panel.box.querySelectorAll('[data-t]')) b.setAttribute('aria-selected', String(b.dataset.t === t));
-    if (t === 'toc') renderToc(); else if (t === 'marks') renderMarks(); else renderSearch();
+    if (t === 'toc') renderToc(); else if (t === 'marks') renderMarks(); else if (t === 'notes') Notes.renderPanel(panel.body); else renderSearch();
   }
   const narrow = () => innerWidth < 900;
   function renderToc() {
@@ -413,6 +415,7 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
+      { label: 'Catatan', icon: 'note', run: () => openPanel('notes') },
       { label: 'Terjemahkan ke bahasa Indonesia', icon: 'translate', run: () => Translate.open() },
       { label: 'Bacakan', icon: 'speak', run: () => TTS.toggle() },
       '-',
@@ -447,6 +450,7 @@ const Reader = (() => {
       case 't': case 'T': openPanel('toc'); break;
       case '/': e.preventDefault(); openPanel('search'); break;
       case 'b': case 'B': toggleMark(); break;
+      case 'n': case 'N': Notes.fromSelection(); break;
       case 'f': case 'F': toggleFull(); break;
       case 'm': case 'M': toggleFocus(); break;
       case 'c': case 'C': toggleCols(); break;
@@ -461,6 +465,7 @@ const Reader = (() => {
     $('#rd-toc').onclick = () => (panel?.tab === 'toc' ? closePanel() : doc && openPanel('toc'));
     $('#rd-search').onclick = () => (panel?.tab === 'search' ? closePanel() : doc && openPanel('search'));
     $('#rd-mark').onclick = toggleMark;
+    $('#rd-note').onclick = () => (panel?.tab === 'notes' && !getSelection()?.toString() ? closePanel() : doc && Notes.fromSelection());
     $('#rd-tts').onclick = () => TTS.toggle();
     $('#rd-tr').onclick = () => Translate.open();
     $('#rd-view').onclick = () => doc && openPop();
@@ -480,7 +485,8 @@ const Reader = (() => {
     document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); });
     matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (view && doc?.kind === 'fixed') view.apply(Settings.all()); });
   }
-  return { open, close, isOpen, bind, get view() { return view; }, get doc() { return doc; }, get book() { return book; } };
+  const refreshPanel = t => { if (panel && panel.tab === t) setTab(t); };
+  return { open, close, isOpen, bind, persist, posRecord, openPanel, closePanel, refreshPanel, jumpTo: p => { rememberJump(); goPos(p); }, get view() { return view; }, get doc() { return doc; }, get book() { return book; } };
 })();
 
 /* ================= Bacakan (suara) ================= */

@@ -339,7 +339,7 @@ class FlowView {
 const isNoteLike = a => /^\s*[[(]?(\d{1,3}|[*†‡§]+|[ivx]{1,4})[\])]?\s*$/i.test(a.textContent) && (a.closest('sup') || a.querySelector('sup') || /^\s*\[/.test(a.textContent));
 const HL = typeof CSS !== 'undefined' && CSS.highlights && typeof Highlight !== 'undefined';
 function setHighlight(name, ranges) { if (HL) { if (ranges.length) CSS.highlights.set(name, new Highlight(...ranges)); else CSS.highlights.delete(name); } }
-function clearHighlights() { if (HL) for (const n of ['rb-hit', 'rb-cur', 'rb-tts']) CSS.highlights.delete(n); }
+function clearHighlights() { if (HL) for (const n of ['rb-hit', 'rb-cur', 'rb-tts', 'rb-note']) CSS.highlights.delete(n); }
 
 /* ================= Tampilan halaman tetap (PDF, gambar, komik) ================= */
 class FixedView {

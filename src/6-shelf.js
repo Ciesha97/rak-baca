@@ -179,7 +179,7 @@ const Shelf = (() => {
       doc?.kind === 'fixed' || b.pages ? ['Halaman', NF.format(doc?.pageCount || b.pages)] : (doc?.sections || b.sections) ? ['Bagian', NF.format(doc?.sections?.length || b.sections)] : null,
       doc?.lang ? ['Bahasa', doc.lang] : null,
       ['Ditambahkan', fmtDate(b.added)], ['Terakhir dibaca', b.opened ? fmtAgo(b.opened) : 'Belum pernah'],
-      ['Kemajuan', Math.round((b.progress || 0) * 100) + '%'], ['Penanda', String(b.bookmarks?.length || 0)],
+      ['Kemajuan', Math.round((b.progress || 0) * 100) + '%'], ['Penanda', String(b.bookmarks?.length || 0)], ['Catatan', String(b.notes?.length || 0)],
       ['Penyimpanan', b.stored ? 'Tersimpan di perangkat ini' : 'Sementara (hilang saat halaman ditutup)'],
     ].filter(Boolean);
     ask({ title: 'Info dokumen', body: `<dl class="kv">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`, ok: 'Tutup', cancel: false });
@@ -210,6 +210,7 @@ const Shelf = (() => {
           { label: 'Buka', icon: 'book', run: () => App.openBook(b.id) },
           { label: 'Info dokumen', icon: 'info', run: () => info(b) },
           { label: 'Unduh berkas asli', icon: 'download', run: () => downloadFile(b) },
+          b.notes?.length ? { label: `Ekspor ${b.notes.length} catatan ke Word`, icon: 'note', run: () => Notes.exportDocx(b) } : null,
           '-',
           { label: 'Hapus dari rak', icon: 'trash', danger: true, run: () => remove(b) },
         ]);

@@ -36,6 +36,12 @@ Cara pakai:
   - Catatan kaki terbuka sebagai jendela kecil. Setelah melompat lewat tautan atau daftar isi,
     tombol "Kembali ke posisi tadi" muncul sebentar.
   - Pencarian mengabaikan huruf besar/kecil dan tanda aksen; Enter = hasil berikutnya.
+  - Catatan: blok teks saat membaca lalu tekan "Catat" (atau tombol N). Kutipan tersalin
+    otomatis (tanpa nomor catatan kaki), lalu tulis insight Anda sendiri. Catatan tanpa
+    kutipan juga bisa ("Catatan baru"). Semua catatan per buku ada di panel Catatan: klik untuk
+    kembali ke lokasinya, tombol ... untuk mengubah atau menghapus. Kutipan disorot hijau di teks.
+    Ekspor: tombol "Word" membuat berkas .docx (judul, kutipan, insight, lokasi), "Salin semua"
+    menyalin teks biasa. Ekspor juga tersedia dari menu ... kartu buku di rak.
   - Terjemahkan ke bahasa Indonesia (tombol bertanda bahasa atau tombol E), misalnya untuk
     buku berbahasa Inggris: menerjemahkan teks yang dipilih, atau seluruh halaman yang sedang
     tampil bila tidak ada teks yang dipilih. Memakai penerjemah bawaan Google Chrome 138+ di
@@ -49,7 +55,7 @@ Pintasan keyboard di layar baca:
   Home / End                                 awal / akhir dokumen
   Ctrl+F atau /                              cari
   T  daftar isi      B  tandai halaman      R  bacakan      F  layar penuh
-  E  terjemahkan ke bahasa Indonesia
+  E  terjemahkan ke bahasa Indonesia      N  catatan baru (pakai teks yang diblok)
   M  mode fokus (sembunyikan bilah)          C  ganti 1 kolom / 2 kolom          + / -  ukuran huruf atau perbesaran
   Esc                                        tutup panel, lalu kembali ke rak
   Di rak: Ctrl+O membuka berkas, / ke kotak pencarian.

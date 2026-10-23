@@ -394,6 +394,52 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await np.close();
   }
 
+  /* ---------- catatan & ekspor Word ---------- */
+  console.log('Catatan');
+  {
+    const tp = await ctx.newPage();
+    tp.on('pageerror', e => errors.push('pageerror (catatan): ' + e.message));
+    await tp.goto(page_url);
+    await tp.waitForSelector('#grid .card');
+    await tp.click('#grid .card:has-text("Laporan Word Contoh") .card-open');
+    await tp.waitForSelector('.doc h1');
+    await tp.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('.doc blockquote')); getSelection().removeAllRanges(); getSelection().addRange(r); });
+    await tp.waitForSelector('.sel-chip');
+    ok(await tp.isVisible('.sel-chip button:has-text("Catat")'), 'tombol Catat muncul di atas teks yang diblok');
+    await tp.click('.sel-chip [data-c="note"]');
+    await tp.waitForSelector('#dlg .note-ed');
+    ok(await tp.inputValue('#dlg [data-f="quote"]') === 'Kutipan penting.', 'kutipan terisi otomatis');
+    await tp.fill('#dlg [data-f="note"]', 'Insight pertama:\nbaris kedua & <tanda> khusus');
+    await tp.click('#dlg [data-a="ok"]');
+    await tp.waitForTimeout(300);
+    ok(await tp.evaluate(() => Reader.book.notes.length) === 1, 'catatan tersimpan');
+    ok(await tp.evaluate(() => CSS.highlights.has('rb-note')), 'kutipan disorot di teks');
+    await tp.keyboard.press('n');
+    await tp.waitForSelector('.panel .note-list li');
+    await tp.click('.panel [data-n="new"]');
+    await tp.fill('#dlg [data-f="note"]', 'Catatan bebas tanpa kutipan');
+    await tp.click('#dlg [data-a="ok"]');
+    await tp.waitForTimeout(300);
+    ok(await tp.$$eval('.panel .note-list li', l => l.length) === 2, 'catatan tanpa kutipan & daftar di panel');
+    const [dl] = await Promise.all([tp.waitForEvent('download'), tp.click('.panel [data-n="docx"]')]);
+    const out = path.join(dir, 'Catatan uji.docx');
+    await dl.saveAs(out);
+    ok(/^Catatan - Laporan Word Contoh\.docx$/.test(dl.suggestedFilename()), 'nama berkas Word: ' + dl.suggestedFilename());
+    await tp.keyboard.press('Escape');
+    await tp.click('#rd-back');
+    await tp.waitForSelector('#reader', { state: 'hidden' });
+    await tp.setInputFiles('#file', out);
+    await tp.waitForSelector('.doc h1');
+    const txt_ = await tp.$eval('.doc', e => e.innerText);
+    ok(await tp.textContent('.doc h1') === 'Catatan Bacaan' && /“Kutipan penting\.”/.test(txt_) && /Insight saya: Insight pertama:\s*baris kedua & <tanda> khusus/.test(txt_) && /Catatan bebas tanpa kutipan/.test(txt_), 'hasil ekspor Word terbaca utuh (kutipan, insight, baris baru, karakter khusus)');
+    await tp.click('#rd-back');
+    await tp.reload();
+    await tp.waitForSelector('#grid .card');
+    await tp.click('#grid .card:has(.t:text-is("Laporan Word Contoh")) .more');
+    ok(await tp.isVisible('.menu button:has-text("Ekspor 2 catatan ke Word")'), 'catatan bertahan setelah muat ulang');
+    await tp.close();
+  }
+
   ok(!(await pwned()), 'tidak ada skrip dokumen yang berjalan selama pengujian');
   const bad = errors.filter(e => !/Failed to load resource|favicon/.test(e));
   ok(bad.length === 0, 'tidak ada galat JavaScript: ' + bad.join(' || '));

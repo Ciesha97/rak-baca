@@ -4,7 +4,7 @@
 set -e
 cd "$(dirname "$0")/.."
 V=vendor/pdfjs
-JS="src/1-core.js src/2-formats.js src/3-views.js src/4-reader.js src/5-shelf.js"
+JS="src/1-core.js src/2-formats.js src/3-views.js src/4-reader.js src/5-notes.js src/6-shelf.js"
 # urutan karakter ini akan menutup/mengacaukan elemen <script> di HTML
 if cat $JS $V/pdf.min.mjs $V/pdf.worker.min.mjs | grep -qi -e '</script' -e '<script' -e '<!--'; then
   echo "build: kode memuat '<script', '</script' atau '<!--' - tulis sebagai '<\\/script' / '<\\!--'" >&2
