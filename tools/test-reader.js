@@ -345,6 +345,50 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await tp.close();
   }
 
+  /* ---------- terjemahan (penerjemah bawaan disimulasikan) ---------- */
+  console.log('Terjemahan');
+  {
+    const tp = await ctx.newPage();
+    tp.on('pageerror', e => errors.push('pageerror (terjemahan): ' + e.message));
+    await tp.addInitScript(() => {
+      window.__tr = [];
+      self.LanguageDetector = { create: async () => ({ detect: async t => [{ detectedLanguage: /the |and /i.test(t) ? 'en' : 'id', confidence: 0.9 }] }) };
+      self.Translator = {
+        availability: async o => (o.sourceLanguage === 'id' ? 'downloadable' : 'unavailable'),
+        create: async o => { o.monitor?.({ addEventListener: (n, f) => f({ loaded: 1 }) }); return { translate: async t => { window.__tr.push(t); return 'EN: ' + t; } }; },
+      };
+    });
+    await tp.goto(page_url);
+    await tp.waitForSelector('#grid .card');
+    await tp.click('#grid .card:has-text("Laporan Word Contoh") .card-open');
+    await tp.waitForSelector('.doc h1');
+    await tp.click('#rd-tr');
+    await tp.waitForSelector('.tr-pop .tr-acts button');
+    const dst = await tp.$$eval('.tr-pop .dst', l => l.map(x => x.textContent));
+    ok(dst.length > 3 && dst.every(x => x.startsWith('EN: ')) && dst.includes('EN: Pendahuluan'), 'halaman diterjemahkan per paragraf: ' + dst.length);
+    await tp.keyboard.press('Escape');
+    ok(!(await tp.$('.tr-pop')), 'jendela terjemahan ditutup dengan Esc');
+    // teks pilihan saja
+    await tp.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('.doc blockquote')); getSelection().removeAllRanges(); getSelection().addRange(r); });
+    await tp.keyboard.press('e');
+    await tp.waitForSelector('.tr-pop .tr-acts button');
+    ok(await tp.$$eval('.tr-pop .dst', l => l.map(x => x.textContent).join('|')) === 'EN: Kutipan penting.' && /Teks pilihan/.test(await tp.textContent('.tr-pop .tr-head')), 'teks pilihan diterjemahkan');
+    await tp.close();
+    // tanpa penerjemah bawaan: tawarkan Google Terjemahan, tidak mengirim apa pun otomatis
+    const np = await ctx.newPage();
+    await np.addInitScript(() => { delete self.Translator; window.open = (u) => { window.__opened = u; }; });
+    await np.goto(page_url);
+    await np.waitForSelector('#grid .card');
+    await np.click('#grid .card:has-text("Laporan Word Contoh") .card-open');
+    await np.waitForSelector('.doc h1');
+    await np.click('#rd-tr');
+    await np.waitForSelector('.tr-pop .tr-msg');
+    ok(/dikirim ke Google/.test(await np.textContent('.tr-pop')) && !(await np.evaluate(() => window.__opened)), 'tanpa penerjemah bawaan: peringatan dulu, belum ada yang dikirim');
+    await np.click('.tr-pop button:has-text("Google Terjemahan")');
+    ok(/^https:\/\/translate\.google\.com\/.*tl=en.*Pendahuluan/.test(await np.evaluate(() => decodeURIComponent(window.__opened || ''))), 'tombol membuka Google Terjemahan ke bahasa Inggris');
+    await np.close();
+  }
+
   ok(!(await pwned()), 'tidak ada skrip dokumen yang berjalan selama pengujian');
   const bad = errors.filter(e => !/Failed to load resource|favicon/.test(e));
   ok(bad.length === 0, 'tidak ada galat JavaScript: ' + bad.join(' || '));

@@ -52,6 +52,7 @@ const Reader = (() => {
     if (doc.title) $('#rd-title').textContent = doc.title;
     $('#rd-search').disabled = doc.kind === 'fixed' && !doc.hasText;
     $('#rd-tts').disabled = doc.kind === 'fixed' && !doc.hasText;
+    $('#rd-tr').disabled = doc.kind === 'fixed' && !doc.hasText;
     onChange();
     Shelf.enrich(book, doc).then(() => { if (book === b) document.title = b.title + ' · Rak Baca'; });
     stage().focus?.();
@@ -59,6 +60,7 @@ const Reader = (() => {
   function close() {
     token++;
     TTS.stop();
+    Translate.close();
     closePanel(); closePop(); closeNote();
     if (backBtn) { backBtn.remove(); backBtn = null; }
     if (view) { persist(); view.destroy(); view = null; }
@@ -411,6 +413,7 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
+      { label: 'Terjemahkan ke bahasa Inggris', icon: 'translate', run: () => Translate.open() },
       { label: 'Bacakan', icon: 'speak', run: () => TTS.toggle() },
       '-',
       { label: 'Kembali ke rak', icon: 'back', run: () => App.toShelf() },
@@ -425,7 +428,7 @@ const Reader = (() => {
     const k = e.key;
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'f') { e.preventDefault(); if (doc) openPanel('search'); return; }
     if (k === 'Escape') {
-      if (notePop) closeNote(); else if (pop) closePop(); else if (panel) closePanel();
+      if (Translate.isOpen()) Translate.close(); else if (notePop) closeNote(); else if (pop) closePop(); else if (panel) closePanel();
       else if ($('#reader').classList.contains('focus')) toggleFocus();
       else if (!document.fullscreenElement) App.toShelf();
       return;
@@ -448,6 +451,7 @@ const Reader = (() => {
       case 'm': case 'M': toggleFocus(); break;
       case 'c': case 'C': toggleCols(); break;
       case 'r': case 'R': TTS.toggle(); break;
+      case 'e': case 'E': Translate.open(); break;
       case '+': case '=': if (doc.kind === 'flow') Settings.set({ fontSize: clamp(Settings.get('fontSize') + 2, 12, 40) }); else view.zoomBy(1.15); break;
       case '-': case '_': if (doc.kind === 'flow') Settings.set({ fontSize: clamp(Settings.get('fontSize') - 2, 12, 40) }); else view.zoomBy(1 / 1.15); break;
     }
@@ -458,6 +462,7 @@ const Reader = (() => {
     $('#rd-search').onclick = () => (panel?.tab === 'search' ? closePanel() : doc && openPanel('search'));
     $('#rd-mark').onclick = toggleMark;
     $('#rd-tts').onclick = () => TTS.toggle();
+    $('#rd-tr').onclick = () => Translate.open();
     $('#rd-view').onclick = () => doc && openPop();
     $('#rd-full').onclick = toggleFull;
     $('#rd-more').onclick = e => more(e.currentTarget);
@@ -627,4 +632,129 @@ const TTS = (() => {
   }
   if (ok()) speechSynthesis.addEventListener?.('voiceschanged', () => { if (on && bar) { const p = paused; showBar(); paused = p; } });
   return { toggle, start, stop, resync: () => resync(false), get on() { return on; } };
+})();
+
+/* ================= Terjemahan ke bahasa Inggris ================= */
+/* Memakai penerjemah bawaan peramban (Chrome 138+): model dijalankan di perangkat, teks tidak
+   dikirim ke internet. Bila tidak tersedia, pengguna bisa memilih membuka Google Terjemahan. */
+const Translate = (() => {
+  let box = null, run = 0;
+  const tools = new Map(), memo = new Map();
+  const isOpen = () => !!box;
+  function close() { run++; box?.remove(); box = null; }
+
+  /* teks yang dipilih, atau semua teks yang sedang tampil */
+  async function grab() {
+    const v = Reader.view, d = Reader.doc;
+    const sel = getSelection();
+    const st = $('#stage');
+    if (sel && !sel.isCollapsed && st.contains(sel.anchorNode) && !box?.contains(sel.anchorNode)) {
+      const t = sel.toString().trim();
+      if (t) return { what: 'Teks pilihan', parts: split(t) };
+    }
+    if (d.kind === 'flow') {
+      const parts = v.blocks().filter(b => v.isVisible(b)).map(b => b.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
+      return { what: 'Halaman ini', parts: parts.flatMap(p => p.length > 1200 ? split(p) : [p]) };
+    }
+    const t = await d.text(v.cur);
+    return { what: 'Halaman ' + (v.cur + 1), parts: split(t.replace(/-\n(?=\p{Ll})/gu, '').replace(/\s*\n\s*/g, ' ')) };
+  }
+  function split(t) {
+    const paras = t.split(/\n\s*\n/).map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const out = [];
+    for (const p of paras) {
+      if (p.length <= 900) { out.push(p); continue; }
+      let cur = '';
+      for (const s of p.match(/[^.!?…]+[.!?…]+["'”’)]*\s*|[^.!?…]+$/g) || [p]) {
+        if ((cur + s).length > 900 && cur) { out.push(cur.trim()); cur = ''; }
+        cur += s;
+      }
+      if (cur.trim()) out.push(cur.trim());
+    }
+    return out;
+  }
+  const API = () => typeof self.Translator !== 'undefined' && self.Translator?.create ? self.Translator : null;
+  async function detect(text) {
+    try {
+      if (typeof self.LanguageDetector !== 'undefined') {
+        const det = await self.LanguageDetector.create();
+        const [best] = await det.detect(text.slice(0, 2000));
+        if (best && best.confidence > 0.5 && best.detectedLanguage !== 'und') return best.detectedLanguage.split('-')[0];
+      }
+    } catch (e) { /* pakai bahasa dokumen */ }
+    return (Reader.doc?.lang || 'id').toLowerCase().split('-')[0] || 'id';
+  }
+  async function tool(src, onProgress) {
+    if (tools.has(src)) return tools.get(src);
+    const T = API();
+    const avail = await T.availability({ sourceLanguage: src, targetLanguage: 'en' });
+    if (avail === 'unavailable' || avail === 'no') return null;
+    const t = await T.create({ sourceLanguage: src, targetLanguage: 'en', monitor(m) { m.addEventListener('downloadprogress', e => onProgress(e.loaded)); } });
+    tools.set(src, t);
+    return t;
+  }
+  const google = text => 'https://translate.google.com/?sl=auto&tl=en&op=translate&text=' + encodeURIComponent(text.slice(0, 4500));
+
+  async function open() {
+    const v = Reader.view, d = Reader.doc;
+    if (!v) return;
+    if (d.kind === 'fixed' && !d.hasText) { toast('Dokumen ini berupa gambar sehingga teksnya tidak bisa diterjemahkan.', 'bad'); return; }
+    const my = ++run;
+    const { what, parts } = await grab();
+    if (my !== run) return;
+    box?.remove();
+    box = el('div', { class: 'tr-pop', role: 'dialog', 'aria-label': 'Terjemahan bahasa Inggris' });
+    box.innerHTML = `<div class="tr-head"><b>Terjemahan bahasa Inggris<small>${esc(what)}</small></b><button class="icon-btn" data-x aria-label="Tutup">${icon('x')}</button></div><div class="tr-body"></div><div class="tr-acts"></div>`;
+    box.querySelector('[data-x]').onclick = close;
+    $('#stage').append(box);
+    const body = $('.tr-body', box), acts = $('.tr-acts', box);
+    const all = parts.join('\n\n');
+    if (!parts.length) { body.innerHTML = '<div class="tr-msg">Tidak ada teks di halaman ini. Pilih teks yang ingin diterjemahkan lalu tekan tombol terjemahkan lagi.</div>'; return; }
+    const btn = (label, fn, cls = '') => { const b = el('button', { class: 'btn ' + cls, text: label }); b.onclick = fn; acts.append(b); return b; };
+    const toGoogle = () => { window.open(google(all), '_blank', 'noopener'); };
+    if (!API()) {
+      body.innerHTML = `<div class="tr-msg"><p>Penerjemah bawaan peramban tidak tersedia di sini. Fitur ini butuh Google Chrome versi 138 atau lebih baru di komputer, dan menerjemahkan langsung di perangkat tanpa internet.</p><p>Sebagai gantinya, teks bisa dibuka di Google Terjemahan. <b>Teks akan dikirim ke Google</b> dan butuh internet.</p></div>`;
+      btn('Tutup', close);
+      btn('Buka di Google Terjemahan', () => { toGoogle(); close(); }, 'primary');
+      return;
+    }
+    const src = await detect(all);
+    if (my !== run) return;
+    if (src === 'en') { body.innerHTML = '<div class="tr-msg">Teks ini sudah berbahasa Inggris.</div>'; btn('Tutup', close, 'primary'); return; }
+    const items = parts.map(p => {
+      const it = el('div', { class: 'tr-item' }, el('div', { class: 'src', text: p.length > 240 ? p.slice(0, 240) + '…' : p }), el('div', { class: 'dst wait', text: 'Menerjemahkan…' }));
+      body.append(it);
+      return it;
+    });
+    let t;
+    try {
+      t = await tool(src, loaded => { if (my === run) items[0].lastChild.textContent = `Mengunduh model terjemahan… ${Math.round(loaded * 100)}%`; });
+    } catch (e) { t = null; console.warn('penerjemah', e); }
+    if (my !== run) return;
+    if (!t) {
+      body.innerHTML = `<div class="tr-msg"><p>Penerjemah bawaan belum bisa menerjemahkan dari bahasa ini (${esc(src)}) ke bahasa Inggris di perangkat ini.</p><p>Buka di Google Terjemahan? <b>Teks akan dikirim ke Google.</b></p></div>`;
+      btn('Tutup', close);
+      btn('Buka di Google Terjemahan', () => { toGoogle(); close(); }, 'primary');
+      return;
+    }
+    const done = [];
+    for (let i = 0; i < parts.length; i++) {
+      const key = src + '\u0000' + parts[i];
+      let out = memo.get(key);
+      if (out == null) {
+        try { out = await t.translate(parts[i]); memo.set(key, out); } catch (e) { out = null; console.warn('terjemah', e); }
+      }
+      if (my !== run) return;
+      const dst = items[i].lastChild;
+      dst.classList.remove('wait');
+      dst.textContent = out ?? '(gagal diterjemahkan)';
+      done.push(out ?? '');
+    }
+    btn('Buka di Google Terjemahan', toGoogle);
+    btn('Salin terjemahan', async () => {
+      try { await navigator.clipboard.writeText(done.join('\n\n')); toast('Terjemahan disalin'); } catch (e) { toast('Tidak bisa menyalin di sini; pilih teks terjemahan lalu tekan Ctrl+C.', 'bad'); }
+    });
+    btn('Tutup', close, 'primary');
+  }
+  return { open, close, isOpen };
 })();

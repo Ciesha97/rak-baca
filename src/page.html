@@ -239,6 +239,20 @@ dialog::backdrop{background:var(--scrim)}
 .note-pop .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;font-family:var(--f-ui)}
 .note-pop .acts .btn{min-height:34px;padding:0 12px;font-size:13px}
 
+/* terjemahan */
+.tr-pop{position:absolute;z-index:36;left:50%;bottom:16px;transform:translateX(-50%);width:min(720px,calc(100% - 24px));max-height:62%;display:flex;flex-direction:column;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.tr-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 16px;border-bottom:1px solid var(--line)}
+.tr-head b{flex:1;font-size:14px}
+.tr-head small{color:var(--muted);font-size:12px;font-weight:500;margin-left:6px}
+.tr-body{overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}
+.tr-item .src{font-size:13px;color:var(--muted);line-height:1.45;margin-bottom:3px}
+.tr-item .dst{font:16.5px/1.55 var(--f-serif)}
+.tr-item .dst.wait{color:var(--muted);font-style:italic}
+.tr-msg{font-size:14px;color:var(--ink-2);line-height:1.5}
+.tr-msg p{margin:0 0 8px}
+.tr-acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:8px 12px 12px;border-top:1px solid var(--line)}
+.tr-acts .btn{min-height:34px;padding:0 12px;font-size:13px}
+
 /* ---------- dokumen mengalir (EPUB, DOCX, TXT, ...) ---------- */
 .flow{position:absolute;inset:0;--fs:19px;--lh:1.6;--measure:36em;--padx:max(20px,5vw);--pady:28px}
 .flow-scroller{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
@@ -379,6 +393,7 @@ dialog::backdrop{background:var(--scrim)}
   <symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 5 9 12l10 7zM5 5v14"/></symbol>
   <symbol id="i-next" viewBox="0 0 24 24"><path d="m5 5 10 7-10 7zM19 5v14"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-translate" viewBox="0 0 24 24"><path d="M3 5h10M8 3v2M5 5c.5 3.5 3 6.5 7 8M11 5c-.5 3.5-3 6.5-7 8"/><path d="m13 21 4-9 4 9M14.4 18h5.2"/></symbol>
 </svg>
 
 <div id="shelf" class="shelf">
@@ -422,6 +437,7 @@ dialog::backdrop{background:var(--scrim)}
       <button class="icon-btn" id="rd-toc" title="Daftar isi (T)" aria-label="Daftar isi"><svg class="ic"><use href="#i-toc"/></svg></button>
       <button class="icon-btn" id="rd-search" title="Cari (Ctrl+F)" aria-label="Cari di dokumen"><svg class="ic"><use href="#i-search"/></svg></button>
       <button class="icon-btn" id="rd-mark" title="Tandai halaman ini (B)" aria-label="Tandai halaman ini" aria-pressed="false"><svg class="ic"><use href="#i-bookmark"/></svg></button>
+      <button class="icon-btn" id="rd-tr" title="Terjemahkan ke bahasa Inggris (E)" aria-label="Terjemahkan ke bahasa Inggris"><svg class="ic"><use href="#i-translate"/></svg></button>
       <button class="icon-btn wide-only" id="rd-tts" title="Bacakan (R)" aria-label="Bacakan"><svg class="ic"><use href="#i-speak"/></svg></button>
       <button class="icon-btn" id="rd-view" title="Tampilan" aria-label="Pengaturan tampilan" aria-expanded="false"><span class="aa">Aa</span></button>
       <button class="icon-btn wide-only" id="rd-full" title="Layar penuh (F)" aria-label="Layar penuh"><svg class="ic"><use href="#i-full"/></svg></button>
