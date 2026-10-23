@@ -154,7 +154,7 @@ const Notes = (() => {
   function hideChip() { chip?.remove(); chip = null; }
   const onSel = debounce(() => {
     const t = selText();
-    if (!t || !Reader.view || $('#dlg').open) { hideChip(); return; }
+    if (!Settings.get('selChip') || !t || !Reader.view || $('#dlg').open) { hideChip(); return; }
     const r = getSelection().getRangeAt(0).getBoundingClientRect(), st = $('#stage').getBoundingClientRect();
     if (!r.width && !r.height) { hideChip(); return; }
     if (!chip) {

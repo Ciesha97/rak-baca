@@ -337,6 +337,7 @@ const Reader = (() => {
         <div class="row"><span>Tata letak</span>${seg('fxmode', [['scroll', 'Gulir'], ['single', 'Per halaman']], view.mode)}</div>
         ${doc.format === 'pdf' ? `<label class="tgl">Halaman gelap saat tema gelap<input type="checkbox" data-c="darkPages" ${s.darkPages ? 'checked' : ''}></label>` : ''}`;
     }
+    if (doc) h += `<label class="tgl">Tombol melayang saat memilih teks<input type="checkbox" data-c="selChip" ${s.selChip ? 'checked' : ''}></label>`;
     pop.innerHTML = h;
     pop.addEventListener('click', e => {
       const t = e.target.closest('button,input');
@@ -373,6 +374,7 @@ const Reader = (() => {
   function closePop() { if (pop) { pop.remove(); pop = null; $('#rd-view').setAttribute('aria-expanded', 'false'); } }
   Settings.on(patch => {
     applyTheme();
+    if ('selChip' in patch && !patch.selChip) Notes.hideChip();
     if (view) {
       if (doc.kind === 'flow' && Object.keys(patch).some(k => /^(font|fontSize|lineHeight|measure|align|flowMode|twoCols|indent)$/.test(k))) view.apply(Settings.all());
       if (doc.kind === 'fixed') view.apply(Settings.all());

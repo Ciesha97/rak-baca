@@ -404,9 +404,9 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await tp.click('#grid .card:has-text("Laporan Word Contoh") .card-open');
     await tp.waitForSelector('.doc h1');
     await tp.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('.doc blockquote')); getSelection().removeAllRanges(); getSelection().addRange(r); });
-    await tp.waitForSelector('.sel-chip');
-    ok(await tp.isVisible('.sel-chip button:has-text("Catat")'), 'tombol Catat muncul di atas teks yang diblok');
-    await tp.click('.sel-chip [data-c="note"]');
+    await tp.waitForTimeout(400);
+    ok(!(await tp.$('.sel-chip')), 'tombol melayang tidak muncul (bawaan mati)');
+    await tp.click('#rd-note');
     await tp.waitForSelector('#dlg .note-ed');
     ok(await tp.inputValue('#dlg [data-f="quote"]') === 'Kutipan penting.', 'kutipan terisi otomatis');
     await tp.fill('#dlg [data-f="note"]', 'Insight pertama:\nbaris kedua & <tanda> khusus');
@@ -437,6 +437,15 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await tp.waitForSelector('#grid .card');
     await tp.click('#grid .card:has(.t:text-is("Laporan Word Contoh")) .more');
     ok(await tp.isVisible('.menu button:has-text("Ekspor 2 catatan ke Word")'), 'catatan bertahan setelah muat ulang');
+    await tp.keyboard.press('Escape');
+    await tp.click('#grid .card:has(.t:text-is("Laporan Word Contoh")) .card-open');
+    await tp.waitForSelector('.doc h1');
+    await tp.click('#rd-view');
+    await tp.check('.pop [data-c="selChip"]');
+    await tp.keyboard.press('Escape');
+    await tp.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('.doc h1')); getSelection().removeAllRanges(); getSelection().addRange(r); });
+    await tp.waitForSelector('.sel-chip', { timeout: 3000 }).catch(() => {});
+    ok(await tp.isVisible('.sel-chip button:has-text("Catat")'), 'tombol melayang bisa dinyalakan di panel Aa');
     await tp.close();
   }
 

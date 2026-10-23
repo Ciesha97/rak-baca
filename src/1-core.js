@@ -92,7 +92,7 @@ function findAll(text, q, limit = 1e6) {
 /* ================= Pengaturan (per perangkat) ================= */
 const Settings = (() => {
   const KEY = 'rakbaca.settings.v1';
-  const DEF = { theme: 'auto', font: 'serif', fontSize: 19, lineHeight: 1.6, measure: 'sedang', align: 'kiri', flowMode: 'paged', twoCols: false, indent: false, darkPages: true, ttsRate: 1, ttsVoice: '', sort: 'opened' };
+  const DEF = { theme: 'auto', font: 'serif', fontSize: 19, lineHeight: 1.6, measure: 'sedang', align: 'kiri', flowMode: 'paged', twoCols: false, indent: false, selChip: false, darkPages: true, ttsRate: 1, ttsVoice: '', sort: 'opened' };
   let s = { ...DEF };
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* penyimpanan tidak tersedia */ }
   const subs = new Set();
