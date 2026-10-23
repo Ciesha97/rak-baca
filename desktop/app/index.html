@@ -437,7 +437,7 @@ dialog::backdrop{background:var(--scrim)}
       <button class="icon-btn" id="rd-toc" title="Daftar isi (T)" aria-label="Daftar isi"><svg class="ic"><use href="#i-toc"/></svg></button>
       <button class="icon-btn" id="rd-search" title="Cari (Ctrl+F)" aria-label="Cari di dokumen"><svg class="ic"><use href="#i-search"/></svg></button>
       <button class="icon-btn" id="rd-mark" title="Tandai halaman ini (B)" aria-label="Tandai halaman ini" aria-pressed="false"><svg class="ic"><use href="#i-bookmark"/></svg></button>
-      <button class="icon-btn" id="rd-tr" title="Terjemahkan ke bahasa Inggris (E)" aria-label="Terjemahkan ke bahasa Inggris"><svg class="ic"><use href="#i-translate"/></svg></button>
+      <button class="icon-btn" id="rd-tr" title="Terjemahkan ke bahasa Indonesia (E)" aria-label="Terjemahkan ke bahasa Indonesia"><svg class="ic"><use href="#i-translate"/></svg></button>
       <button class="icon-btn wide-only" id="rd-tts" title="Bacakan (R)" aria-label="Bacakan"><svg class="ic"><use href="#i-speak"/></svg></button>
       <button class="icon-btn" id="rd-view" title="Tampilan" aria-label="Pengaturan tampilan" aria-expanded="false"><span class="aa">Aa</span></button>
       <button class="icon-btn wide-only" id="rd-full" title="Layar penuh (F)" aria-label="Layar penuh"><svg class="ic"><use href="#i-full"/></svg></button>
@@ -3742,7 +3742,7 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
-      { label: 'Terjemahkan ke bahasa Inggris', icon: 'translate', run: () => Translate.open() },
+      { label: 'Terjemahkan ke bahasa Indonesia', icon: 'translate', run: () => Translate.open() },
       { label: 'Bacakan', icon: 'speak', run: () => TTS.toggle() },
       '-',
       { label: 'Kembali ke rak', icon: 'back', run: () => App.toShelf() },
@@ -3963,7 +3963,7 @@ const TTS = (() => {
   return { toggle, start, stop, resync: () => resync(false), get on() { return on; } };
 })();
 
-/* ================= Terjemahan ke bahasa Inggris ================= */
+/* ================= Terjemahan ke bahasa Indonesia ================= */
 /* Memakai penerjemah bawaan peramban (Chrome 138+): model dijalankan di perangkat, teks tidak
    dikirim ke internet. Bila tidak tersedia, pengguna bisa memilih membuka Google Terjemahan. */
 const Translate = (() => {
@@ -4011,18 +4011,18 @@ const Translate = (() => {
         if (best && best.confidence > 0.5 && best.detectedLanguage !== 'und') return best.detectedLanguage.split('-')[0];
       }
     } catch (e) { /* pakai bahasa dokumen */ }
-    return (Reader.doc?.lang || 'id').toLowerCase().split('-')[0] || 'id';
+    return (Reader.doc?.lang || 'en').toLowerCase().split('-')[0] || 'en';
   }
   async function tool(src, onProgress) {
     if (tools.has(src)) return tools.get(src);
     const T = API();
-    const avail = await T.availability({ sourceLanguage: src, targetLanguage: 'en' });
+    const avail = await T.availability({ sourceLanguage: src, targetLanguage: 'id' });
     if (avail === 'unavailable' || avail === 'no') return null;
-    const t = await T.create({ sourceLanguage: src, targetLanguage: 'en', monitor(m) { m.addEventListener('downloadprogress', e => onProgress(e.loaded)); } });
+    const t = await T.create({ sourceLanguage: src, targetLanguage: 'id', monitor(m) { m.addEventListener('downloadprogress', e => onProgress(e.loaded)); } });
     tools.set(src, t);
     return t;
   }
-  const google = text => 'https://translate.google.com/?sl=auto&tl=en&op=translate&text=' + encodeURIComponent(text.slice(0, 4500));
+  const google = text => 'https://translate.google.com/?sl=auto&tl=id&op=translate&text=' + encodeURIComponent(text.slice(0, 4500));
 
   async function open() {
     const v = Reader.view, d = Reader.doc;
@@ -4032,8 +4032,8 @@ const Translate = (() => {
     const { what, parts } = await grab();
     if (my !== run) return;
     box?.remove();
-    box = el('div', { class: 'tr-pop', role: 'dialog', 'aria-label': 'Terjemahan bahasa Inggris' });
-    box.innerHTML = `<div class="tr-head"><b>Terjemahan bahasa Inggris<small>${esc(what)}</small></b><button class="icon-btn" data-x aria-label="Tutup">${icon('x')}</button></div><div class="tr-body"></div><div class="tr-acts"></div>`;
+    box = el('div', { class: 'tr-pop', role: 'dialog', 'aria-label': 'Terjemahan bahasa Indonesia' });
+    box.innerHTML = `<div class="tr-head"><b>Terjemahan bahasa Indonesia<small>${esc(what)}</small></b><button class="icon-btn" data-x aria-label="Tutup">${icon('x')}</button></div><div class="tr-body"></div><div class="tr-acts"></div>`;
     box.querySelector('[data-x]').onclick = close;
     $('#stage').append(box);
     const body = $('.tr-body', box), acts = $('.tr-acts', box);
@@ -4049,7 +4049,7 @@ const Translate = (() => {
     }
     const src = await detect(all);
     if (my !== run) return;
-    if (src === 'en') { body.innerHTML = '<div class="tr-msg">Teks ini sudah berbahasa Inggris.</div>'; btn('Tutup', close, 'primary'); return; }
+    if (src === 'id' || src === 'ms') { body.innerHTML = '<div class="tr-msg">Teks ini sudah berbahasa Indonesia.</div>'; btn('Tutup', close, 'primary'); return; }
     const items = parts.map(p => {
       const it = el('div', { class: 'tr-item' }, el('div', { class: 'src', text: p.length > 240 ? p.slice(0, 240) + '…' : p }), el('div', { class: 'dst wait', text: 'Menerjemahkan…' }));
       body.append(it);
@@ -4061,7 +4061,7 @@ const Translate = (() => {
     } catch (e) { t = null; console.warn('penerjemah', e); }
     if (my !== run) return;
     if (!t) {
-      body.innerHTML = `<div class="tr-msg"><p>Penerjemah bawaan belum bisa menerjemahkan dari bahasa ini (${esc(src)}) ke bahasa Inggris di perangkat ini.</p><p>Buka di Google Terjemahan? <b>Teks akan dikirim ke Google.</b></p></div>`;
+      body.innerHTML = `<div class="tr-msg"><p>Penerjemah bawaan belum bisa menerjemahkan dari bahasa ini (${esc(src)}) ke bahasa Indonesia di perangkat ini.</p><p>Buka di Google Terjemahan? <b>Teks akan dikirim ke Google.</b></p></div>`;
       btn('Tutup', close);
       btn('Buka di Google Terjemahan', () => { toGoogle(); close(); }, 'primary');
       return;

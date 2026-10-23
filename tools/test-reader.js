@@ -352,10 +352,10 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     tp.on('pageerror', e => errors.push('pageerror (terjemahan): ' + e.message));
     await tp.addInitScript(() => {
       window.__tr = [];
-      self.LanguageDetector = { create: async () => ({ detect: async t => [{ detectedLanguage: /the |and /i.test(t) ? 'en' : 'id', confidence: 0.9 }] }) };
+      self.LanguageDetector = { create: async () => ({ detect: async t => [{ detectedLanguage: window.__lang || 'en', confidence: 0.9 }] }) };
       self.Translator = {
-        availability: async o => (o.sourceLanguage === 'id' ? 'downloadable' : 'unavailable'),
-        create: async o => { o.monitor?.({ addEventListener: (n, f) => f({ loaded: 1 }) }); return { translate: async t => { window.__tr.push(t); return 'EN: ' + t; } }; },
+        availability: async o => (o.sourceLanguage === 'en' && o.targetLanguage === 'id' ? 'downloadable' : 'unavailable'),
+        create: async o => { o.monitor?.({ addEventListener: (n, f) => f({ loaded: 1 }) }); return { translate: async t => { window.__tr.push(t); return 'ID: ' + t; } }; },
       };
     });
     await tp.goto(page_url);
@@ -365,14 +365,19 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await tp.click('#rd-tr');
     await tp.waitForSelector('.tr-pop .tr-acts button');
     const dst = await tp.$$eval('.tr-pop .dst', l => l.map(x => x.textContent));
-    ok(dst.length > 3 && dst.every(x => x.startsWith('EN: ')) && dst.includes('EN: Pendahuluan'), 'halaman diterjemahkan per paragraf: ' + dst.length);
+    ok(dst.length > 3 && dst.every(x => x.startsWith('ID: ')) && dst.includes('ID: Pendahuluan'), 'halaman diterjemahkan per paragraf: ' + dst.length);
     await tp.keyboard.press('Escape');
     ok(!(await tp.$('.tr-pop')), 'jendela terjemahan ditutup dengan Esc');
     // teks pilihan saja
     await tp.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('.doc blockquote')); getSelection().removeAllRanges(); getSelection().addRange(r); });
     await tp.keyboard.press('e');
     await tp.waitForSelector('.tr-pop .tr-acts button');
-    ok(await tp.$$eval('.tr-pop .dst', l => l.map(x => x.textContent).join('|')) === 'EN: Kutipan penting.' && /Teks pilihan/.test(await tp.textContent('.tr-pop .tr-head')), 'teks pilihan diterjemahkan');
+    ok(await tp.$$eval('.tr-pop .dst', l => l.map(x => x.textContent).join('|')) === 'ID: Kutipan penting.' && /Teks pilihan/.test(await tp.textContent('.tr-pop .tr-head')), 'teks pilihan diterjemahkan');
+    await tp.keyboard.press('Escape');
+    await tp.evaluate(() => { getSelection().removeAllRanges(); window.__lang = 'id'; });
+    await tp.keyboard.press('e');
+    await tp.waitForSelector('.tr-pop .tr-msg');
+    ok(/sudah berbahasa Indonesia/.test(await tp.textContent('.tr-pop')), 'teks berbahasa Indonesia tidak diterjemahkan ulang');
     await tp.close();
     // tanpa penerjemah bawaan: tawarkan Google Terjemahan, tidak mengirim apa pun otomatis
     const np = await ctx.newPage();
@@ -385,7 +390,7 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await np.waitForSelector('.tr-pop .tr-msg');
     ok(/dikirim ke Google/.test(await np.textContent('.tr-pop')) && !(await np.evaluate(() => window.__opened)), 'tanpa penerjemah bawaan: peringatan dulu, belum ada yang dikirim');
     await np.click('.tr-pop button:has-text("Google Terjemahan")');
-    ok(/^https:\/\/translate\.google\.com\/.*tl=en.*Pendahuluan/.test(await np.evaluate(() => decodeURIComponent(window.__opened || ''))), 'tombol membuka Google Terjemahan ke bahasa Inggris');
+    ok(/^https:\/\/translate\.google\.com\/.*tl=id.*Pendahuluan/.test(await np.evaluate(() => decodeURIComponent(window.__opened || ''))), 'tombol membuka Google Terjemahan ke bahasa Indonesia');
     await np.close();
   }
 
