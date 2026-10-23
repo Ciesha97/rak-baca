@@ -1,6 +1,6 @@
 #!/bin/sh
-# Menyatukan src/ dan pdf.js (vendor/) menjadi satu halaman rak-baca.html,
-# lalu menyalinnya ke aplikasi desktop. Hasilnya bisa dibuka langsung di Chrome/Edge/Firefox tanpa internet.
+# Menyatukan src/ dan pdf.js (vendor/) menjadi satu halaman rak-baca.html.
+# Hasilnya bisa dibuka langsung di Chrome/Edge tanpa internet, atau diterbitkan ke GitHub Pages.
 set -e
 cd "$(dirname "$0")/.."
 V=vendor/pdfjs
@@ -11,8 +11,8 @@ if cat $JS $V/pdf.min.mjs $V/pdf.worker.min.mjs | grep -qi -e '</script' -e '<sc
   exit 1
 fi
 b64() { base64 < "$1" | tr -d '\r\n'; }
-# nomor versi diambil dari desktop/package.json
-VER=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' desktop/package.json | head -n 1)
+# nomor versi diambil dari berkas VERSION
+VER=$(tr -d ' \r\n' < VERSION)
 {
   sed "s/@@VERSI@@/$VER/" src/page.html
   printf '<script type="text/plain" id="pdfjs-lib">'
@@ -27,5 +27,4 @@ VER=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' desktop/package.json | head -
   cat $JS
   printf '</script>\n</body>\n</html>\n'
 } > rak-baca.html
-cp rak-baca.html desktop/app/index.html
-echo "built rak-baca.html ($(wc -c < rak-baca.html) bytes) + desktop/app/index.html"
+echo "built rak-baca.html v$VER ($(wc -c < rak-baca.html) bytes)"

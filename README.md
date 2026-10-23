@@ -1,8 +1,10 @@
+<img src="docs/ikon.png" alt="" width="72" align="right">
+
 # Rak Baca
 
 **Pembaca dokumen universal yang bekerja tanpa internet.** Buka PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, gambar, dan komik dalam satu aplikasi. Dokumen dibaca langsung di perangkat Anda dan tidak pernah diunggah ke mana pun.
 
-**[▶ Coba langsung di peramban](https://ciesha97.github.io/rak-baca/)** · **[⬇ Unduh (Windows / satu berkas HTML)](https://github.com/Ciesha97/rak-baca/releases/latest)**
+**[▶ Coba langsung di peramban](https://ciesha97.github.io/rak-baca/)** · **[⬇ Unduh satu berkas HTML](https://github.com/Ciesha97/rak-baca/releases/latest)**
 
 ![Rak berisi buku dengan sampul, kartu "Lanjutkan membaca", dan filter format](docs/tangkapan/rak.png)
 
@@ -13,7 +15,7 @@
 - **Nyaman dibaca lama:** tema terang, sepia, dan gelap; huruf serif/sans/mono; ukuran huruf, spasi baris, dan lebar teks bisa diatur; tata letak 1 kolom, 2 kolom, atau gulir.
 - **Daftar isi, pencarian, dan penanda halaman.** Pencarian mengabaikan huruf besar/kecil dan tanda aksen.
 - **Catatan:** blok kutipan saat membaca, tambahkan insight Anda sendiri, lalu ekspor semua catatan ke **Word (.docx)**.
-- **Terjemahan ke bahasa Indonesia** untuk teks pilihan atau satu halaman (penerjemah bawaan Chrome, berjalan di perangkat).
+- **Terjemahan ke bahasa Indonesia** untuk teks pilihan atau satu halaman (penerjemah bawaan Google Chrome 138+ di komputer, berjalan di perangkat).
 - **Bacakan:** teks dibacakan dengan suara (text-to-speech) sambil paragraf yang dibaca disorot.
 - **PDF lengkap:** teks bisa dipilih dan dicari, tautan dan kerangka (outline) berfungsi, PDF berkata sandi dan hasil pindaian (JBIG2/JPEG2000) bisa dibuka, plus mode halaman gelap.
 - **Catatan kaki** muncul sebagai jendela kecil; setelah melompat lewat tautan ada tombol *Kembali ke posisi tadi*.
@@ -40,14 +42,14 @@
 
 ## Cara memakai
 
-Pilih salah satu:
+Tidak ada yang perlu dipasang. Pilih salah satu:
 
 1. **Versi online.** Buka **https://ciesha97.github.io/rak-baca/** di Chrome atau Edge (paling teruji). Firefox dan Safari versi terbaru seharusnya juga bisa. Tidak perlu daftar atau memasang apa pun. Meski dibuka dari internet, dokumen tetap dibaca di perangkat Anda sendiri.
 2. **Satu berkas HTML (bisa tanpa internet sama sekali).** Unduh `rak-baca.html` dari halaman [Releases](https://github.com/Ciesha97/rak-baca/releases/latest), lalu klik dua kali untuk membuka di peramban. Berkas ini bisa disalin ke flashdisk atau dikirim ke orang lain.
-3. **Aplikasi Windows.** Unduh `Rak-Baca-Setup-<versi>.exe` (dengan installer) atau `Rak-Baca-Portable.exe` (langsung jalan) dari [Releases](https://github.com/Ciesha97/rak-baca/releases/latest). Setelah dipasang, dokumen bisa dibuka lewat klik kanan → *Open with* → *Rak Baca*.
-   > Installer belum ditandatangani (code signing), jadi Windows SmartScreen akan menampilkan "Windows protected your PC". Klik **More info** → **Run anyway**.
 
 Lalu klik **Buka dokumen** atau seret berkas ke jendela.
+
+> 💡 Agar semua fitur aktif, termasuk **terjemahan bawaan**, pakai **Google Chrome versi 138 ke atas di komputer**. Di peramban atau perangkat lain, semua fitur tetap jalan kecuali terjemahan bawaan, yang diganti tombol *Buka di Google Terjemahan*.
 
 ### Pintasan keyboard di layar baca
 
@@ -72,7 +74,7 @@ Di rak: **Ctrl+O** membuka berkas, **/** ke kotak pencarian.
 
 - **Tidak ada yang dikirim ke internet.** Halaman memakai Content-Security-Policy yang melarang dokumen memuat apa pun dari internet (gambar, skrip, font, pelacak). Tautan luar di dalam dokumen hanya terbuka bila Anda mengkliknya.
 - **Isi dokumen disaring.** Halaman dokumen dibangun ulang hanya dari elemen dan atribut yang aman, sehingga skrip, iframe, formulir, *event handler*, dan tautan `javascript:` dari dokumen tidak pernah berjalan.
-- **Penyimpanan lokal.** Salinan dokumen, posisi baca, penanda, dan catatan disimpan di penyimpanan peramban (IndexedDB) atau, di aplikasi Windows, di `%APPDATA%\Rak Baca`. Peramban lain atau mode penyamaran punya rak sendiri.
+- **Penyimpanan lokal.** Salinan dokumen, posisi baca, penanda, dan catatan disimpan di penyimpanan peramban (IndexedDB). Peramban lain atau mode penyamaran punya rak sendiri.
   > ⚠️ **Menghapus data situs/riwayat peramban juga menghapus rak dan catatan Anda.** Ekspor catatan penting ke Word secara berkala.
 - **Terjemahan:** penerjemah bawaan Chrome (versi 138 ke atas di komputer) berjalan di perangkat. Di peramban lain tersedia tombol *Buka di Google Terjemahan*. Teks baru dikirim ke Google setelah Anda mengklik tombol itu.
 
@@ -84,13 +86,13 @@ Rak Baca ditulis dengan HTML, CSS, dan JavaScript biasa tanpa framework dan tanp
 src/            kode sumber: page.html (tampilan & CSS) + 1-core … 6-shelf.js
 vendor/pdfjs/   pdf.js dari Mozilla (Apache-2.0)
 tools/          build.sh, make-samples.js, test-reader.js, update-pdfjs.sh
-desktop/        aplikasi desktop Electron + konfigurasi installer
-docs/           tangkapan layar untuk README
+docs/           ikon & tangkapan layar untuk README
+VERSION         nomor versi aplikasi
 rak-baca.html   hasil build: seluruh aplikasi dalam satu berkas
 ```
 
 ```sh
-sh tools/build.sh                         # src/ + pdf.js → rak-baca.html & desktop/app/index.html
+sh tools/build.sh                         # src/ + pdf.js → rak-baca.html
 node tools/make-samples.js /tmp/contoh    # dokumen contoh semua format
 npm i --no-save playwright                # sekali saja
 node tools/test-reader.js /tmp/contoh     # ±140 pemeriksaan di Chromium
@@ -98,16 +100,7 @@ RAK_URL=http://localhost:8000/ node tools/test-reader.js /tmp/contoh   # uji lew
 sh tools/update-pdfjs.sh 6.4.299          # ganti versi pdf.js
 ```
 
-Aplikasi desktop (butuh Node.js 22+):
-
-```sh
-cd desktop
-npm ci
-npm start            # jalankan
-npm run dist:win     # installer + versi portable di desktop/dist
-```
-
-**Rilis:** naikkan `version` di `desktop/package.json`, jalankan `sh tools/build.sh`, commit, lalu buat tag `v<versi>` (mis. `v1.0.1`) atau buat Release dengan tag itu di GitHub. Workflow akan menguji semua format, membuat installer Windows, lalu melampirkan installer dan `rak-baca.html` ke halaman rilis. Setiap push ke `main` juga memperbarui versi online di GitHub Pages.
+**Rilis:** ubah nomor di berkas `VERSION`, jalankan `sh tools/build.sh`, commit, lalu buat tag `v<versi>` (mis. `v1.0.2`) atau buat Release dengan tag itu di GitHub. Workflow akan menguji semua format lalu melampirkan `rak-baca.html` ke halaman rilis. Setiap push ke `main` juga memperbarui versi online di GitHub Pages.
 
 Laporan bug dan usulan fitur sangat diterima lewat [Issues](https://github.com/Ciesha97/rak-baca/issues). Sertakan versi (tertulis di kaki halaman rak), peramban/perangkat, dan bila bisa, contoh dokumennya.
 
@@ -121,4 +114,4 @@ Komponen pihak ketiga: pdf.js © Mozilla Foundation, lisensi Apache-2.0 (`vendor
 
 ### English
 
-**Rak Baca** ("reading shelf") is an offline, universal document reader that runs entirely in your browser (or as a Windows app). It opens PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, images, and CBZ comics. It also has a library with covers and reading progress, adjustable typography, themes, search, bookmarks, notes with Word export, text-to-speech, and on-device translation into Indonesian. Documents never leave your device. [Try it online](https://ciesha97.github.io/rak-baca/) or download a release. The interface is in Indonesian. MIT licensed.
+**Rak Baca** ("reading shelf") is an offline, universal document reader that runs entirely in your browser, with nothing to install. It opens PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, images, and CBZ comics. It also has a library with covers and reading progress, adjustable typography, themes, search, bookmarks, notes with Word export, text-to-speech, and on-device translation into Indonesian (Chrome 138+ on desktop). Documents never leave your device. [Try it online](https://ciesha97.github.io/rak-baca/) or download a release. The interface is in Indonesian. MIT licensed.

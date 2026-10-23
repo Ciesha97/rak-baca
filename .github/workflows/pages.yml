@@ -30,7 +30,7 @@ jobs:
           git diff --exit-code -- rak-baca.html
           mkdir -p _site
           cp rak-baca.html _site/index.html
-          cp desktop/build/icon.png _site/icon.png
+          cp docs/ikon.png _site/icon.png
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

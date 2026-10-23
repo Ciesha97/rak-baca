@@ -16,7 +16,7 @@ Jelaskan singkat masalahnya.
 
 **Lingkungan**
 - Versi Rak Baca (tertulis di kaki halaman rak, mis. v1.0.0):
-- Dipakai lewat: versi online / berkas rak-baca.html / aplikasi Windows
+- Dipakai lewat: versi online / berkas rak-baca.html
 - Peramban & sistem operasi (mis. Chrome 141 di Windows 11, Chrome di Android 14):
 - Format dokumen (PDF, EPUB, …):
 

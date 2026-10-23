@@ -276,12 +276,6 @@ const App = (() => {
     await Shelf.load();
     addEventListener('hashchange', route);
     await route();
-    // jembatan aplikasi desktop: berkas dari "Buka dengan…" / seret ke ikon
-    const d = window.rakDesktop;
-    if (d) {
-      d.onOpen(list => Shelf.add(list.map(f => new File([f.data], f.name, { lastModified: f.mtime || Date.now() }))));
-      d.ready();
-    }
   }
   return { init, openBook, toShelf };
 })();
