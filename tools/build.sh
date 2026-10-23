@@ -11,8 +11,10 @@ if cat $JS $V/pdf.min.mjs $V/pdf.worker.min.mjs | grep -qi -e '</script' -e '<sc
   exit 1
 fi
 b64() { base64 < "$1" | tr -d '\r\n'; }
+# nomor versi diambil dari desktop/package.json
+VER=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' desktop/package.json | head -n 1)
 {
-  cat src/page.html
+  sed "s/@@VERSI@@/$VER/" src/page.html
   printf '<script type="text/plain" id="pdfjs-lib">'
   cat $V/pdf.min.mjs
   printf '</script>\n<script type="text/plain" id="pdfjs-worker">'

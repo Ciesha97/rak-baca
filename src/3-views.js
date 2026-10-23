@@ -244,7 +244,7 @@ class FlowView {
     const pct = Math.round(this.progress() * 100) + '%';
     return {
       pos: this.mode === 'paged' ? `${this.page + 1}/${this.pages} · ${pct}` : pct,
-      sub: this.total > 1 ? (sec?.title || `Bagian ${this.sec + 1}`) + (this.mode === 'paged' ? '' : '') : '',
+      sub: this.total > 1 ? sec?.title || `Bagian ${this.sec + 1}` : '',
     };
   }
   report() { this.cb.change?.(); }

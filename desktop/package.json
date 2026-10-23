@@ -3,7 +3,10 @@
   "productName": "Rak Baca",
   "version": "1.0.0",
   "description": "Pembaca dokumen universal: PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, gambar, dan komik",
-  "author": "Rak Baca",
+  "author": "Ciesha97",
+  "license": "MIT",
+  "homepage": "https://github.com/Ciesha97/rak-baca",
+  "repository": { "type": "git", "url": "https://github.com/Ciesha97/rak-baca.git" },
   "main": "app/main.js",
   "scripts": { "start": "electron .", "dist:win": "electron-builder --win nsis portable --x64 --publish never", "dist:linux": "electron-builder --linux AppImage --publish never" },
   "build": {
@@ -16,7 +19,7 @@
       { "ext": ["pdf", "docx", "odt", "rtf", "md", "markdown"], "name": "Dokumen", "description": "Dokumen", "role": "Viewer", "icon": "build/icon.ico" }
     ],
     "win": { "icon": "build/icon.ico", "signExecutable": false },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "Rak Baca", "installerIcon": "build/icon.ico", "uninstallerIcon": "build/icon.ico" },
+    "nsis": { "artifactName": "Rak-Baca-Setup-${version}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "Rak Baca", "installerIcon": "build/icon.ico", "uninstallerIcon": "build/icon.ico" },
     "portable": { "artifactName": "Rak-Baca-Portable.exe" },
     "linux": { "icon": "build/icon.png", "category": "Office" }
   },

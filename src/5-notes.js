@@ -139,6 +139,11 @@ const Notes = (() => {
       const head = findAll(map.text, foldQuery(lines[0].slice(0, 40)), 50);
       if (!head.length) continue;
       const tail = foldQuery(lines[lines.length - 1].slice(-30));
+      // utamakan kemunculan yang dimulai di blok tempat kutipan diambil
+      const blk = v.blocks()[n.pos.b];
+      const from = blk ? map.nodes.findIndex(t => blk.contains(t)) : -1;
+      const startAt = from >= 0 ? map.starts[from] : 0;
+      head.sort((x, y) => (x[0] < startAt) - (y[0] < startAt) || x[0] - y[0]);
       let best = null;
       for (const [a] of head) {
         const t = findAll(map.text.slice(a, a + q.length * 2 + 200), tail, 1)[0];

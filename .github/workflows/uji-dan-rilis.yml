@@ -1,0 +1,85 @@
+# Menguji semua format di Chrome, lalu membuat installer Windows.
+# Tag v* (mis. v1.0.1) atau Release baru di GitHub: installer + rak-baca.html dilampirkan ke rilis.
+name: Uji & rilis
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  uji:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pastikan rak-baca.html & desktop/app/index.html sesuai src/
+        run: |
+          sh tools/build.sh
+          git diff --exit-code -- rak-baca.html desktop/app/index.html
+
+      - name: Tag rilis harus sama dengan versi di desktop/package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VER=$(node -p "require('./desktop/package.json').version")
+          test "${GITHUB_REF_NAME#v}" = "$VER" || { echo "Tag $GITHUB_REF_NAME tidak sama dengan versi $VER"; exit 1; }
+
+      - name: Uji semua format di Chrome
+        run: |
+          npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/pw" playwright-core@1.56.1
+          node tools/make-samples.js "$RUNNER_TEMP/contoh"
+          NODE_PATH="$RUNNER_TEMP/pw/node_modules" CHROME_PATH="$(command -v google-chrome)" node tools/test-reader.js "$RUNNER_TEMP/contoh"
+
+  windows:
+    needs: uji
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Build installer
+        working-directory: desktop
+        run: |
+          npm ci
+          npm run dist:win
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rak-baca-windows
+          path: |
+            desktop/dist/*.exe
+            rak-baca.html
+          if-no-files-found: error
+
+      - name: Lampirkan ke GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="$GITHUB_REF_NAME"
+          FILES=(desktop/dist/*.exe rak-baca.html)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${FILES[@]}" --clobber
+          else
+            gh release create "$TAG" "${FILES[@]}" --title "Rak Baca ${TAG#v}" --notes "Unduh salah satu:
+          - **Rak-Baca-Setup-${TAG#v}.exe**: installer Windows 64-bit (pintasan desktop & Start Menu, Open with).
+          - **Rak-Baca-Portable.exe**: langsung jalan tanpa instal.
+          - **rak-baca.html**: satu berkas untuk dibuka di Chrome/Edge di komputer mana pun, tanpa internet.
+
+          Versi online: https://ciesha97.github.io/rak-baca/"
+          fi

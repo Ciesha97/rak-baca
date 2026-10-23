@@ -1,4 +1,5 @@
 /* ================= Rak ================= */
+const REPO_URL = 'https://github.com/Ciesha97/rak-baca';
 const Shelf = (() => {
   let books = [], filter = 'all', query = '';
   const covers = new Map(), memFiles = new Map();
@@ -78,9 +79,10 @@ const Shelf = (() => {
     if (books.length) parts.push(`${books.length} dokumen · ${fmtSize(total)}`);
     parts.push(Store.persistent ? 'Disimpan di perangkat ini' : 'Penyimpanan peramban tidak tersedia: rak hanya bertahan selama halaman ini terbuka');
     parts.push('Tidak ada yang dikirim ke internet');
+    const ver = document.querySelector('meta[name="version"]')?.content;
     const est = await Store.estimate();
     if (est?.quota && est.usage != null) parts.push(`Ruang terpakai ${fmtSize(est.usage)} dari ${fmtSize(est.quota)}`);
-    $('#foot').innerHTML = parts.map(p => `<span>${esc(p)}</span>`).join('');
+    $('#foot').innerHTML = parts.map(p => `<span>${esc(p)}</span>`).join('') + `<span style="margin-left:auto">Rak Baca${ver && !/@/.test(ver) ? ' v' + esc(ver) : ''} · <a href="${REPO_URL}" target="_blank" rel="noopener noreferrer">kode sumber &amp; panduan</a></span>`;
   }
 
   /* ---------- menambah dokumen ---------- */
@@ -156,7 +158,8 @@ const Shelf = (() => {
     try { return await Store.files.get(b.id); } catch (e) { return null; }
   }
   async function remove(b) {
-    const ok = await ask({ title: 'Hapus dari rak?', body: `<p><b>${esc(b.title)}</b> beserta posisi baca dan penandanya akan dihapus dari rak. Berkas aslinya di komputer atau ponsel tidak terhapus.</p>`, ok: 'Hapus', danger: true });
+    const n = b.notes?.length || 0;
+    const ok = await ask({ title: 'Hapus dari rak?', body: `<p><b>${esc(b.title)}</b> beserta posisi baca, penanda${n ? `, dan <b>${n} catatan Anda</b>` : ''} akan dihapus dari rak. Berkas aslinya di komputer atau ponsel tidak terhapus.</p>${n ? '<p>Ekspor catatan ke Word lebih dulu bila ingin menyimpannya.</p>' : ''}`, ok: 'Hapus', danger: true });
     if (!ok) return;
     await Store.books.del(b.id).catch(() => {});
     await Store.files.del(b.id).catch(() => {});

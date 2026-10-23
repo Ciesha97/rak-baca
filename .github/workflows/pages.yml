@@ -1,0 +1,40 @@
+# Menerbitkan Rak Baca ke GitHub Pages setiap ada perubahan di main.
+# Sekali saja: Settings > Pages > Build and deployment > Source: "GitHub Actions".
+name: Terbitkan ke GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  terbitkan:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Siapkan situs
+        run: |
+          sh tools/build.sh
+          git diff --exit-code -- rak-baca.html
+          mkdir -p _site
+          cp rak-baca.html _site/index.html
+          cp desktop/build/icon.png _site/icon.png
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

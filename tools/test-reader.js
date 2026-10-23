@@ -1,4 +1,5 @@
 // Uji menyeluruh Rak Baca di Chromium: node tools/test-reader.js <folder-contoh>
+// (RAK_URL=http://localhost:8000/ untuk menguji lewat server, seperti di GitHub Pages)
 // Butuh paket "playwright" (atau "playwright-core" + CHROME_PATH). Membuka rak-baca.html lewat file://,
 // memasukkan setiap dokumen contoh, lalu memeriksa tampilan, keamanan, navigasi, pencarian, dan penyimpanan.
 'use strict';
@@ -8,7 +9,8 @@ let pw;
 try { pw = require('playwright'); } catch (e) { pw = require('playwright-core'); }
 
 const dir = path.resolve(process.argv[2] || path.join(__dirname, '..', 'contoh'));
-const page_url = 'file://' + path.resolve(__dirname, '..', 'rak-baca.html').replace(/\\/g, '/').replace(/^\/?/, '/');
+// RAK_URL=http://… menguji versi yang dilayani server (seperti GitHub Pages); bawaan: berkas lokal
+const page_url = process.env.RAK_URL || 'file://' + path.resolve(__dirname, '..', 'rak-baca.html').replace(/\\/g, '/').replace(/^\/?/, '/');
 const fails = [];
 let passed = 0;
 const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.log('  GAGAL:', msg); } };
