@@ -13,8 +13,10 @@ fi
 b64() { base64 < "$1" | tr -d '\r\n'; }
 # nomor versi diambil dari berkas VERSION
 VER=$(tr -d ' \r\n' < VERSION)
+# CSP mengizinkan skrip aplikasi lewat hash isinya (bukan nonce tetap yang bisa ditiru siapa pun)
+HASH="sha256-$({ printf '\n'; cat $JS; } | openssl dgst -sha256 -binary | base64 | tr -d '\r\n')"
 {
-  sed "s/@@VERSI@@/$VER/" src/page.html
+  sed -e "s/@@VERSI@@/$VER/" -e "s|@@SKRIP_HASH@@|$HASH|" src/page.html
   printf '<script type="text/plain" id="pdfjs-lib">'
   cat $V/pdf.min.mjs
   printf '</script>\n<script type="text/plain" id="pdfjs-worker">'
@@ -23,7 +25,7 @@ VER=$(tr -d ' \r\n' < VERSION)
   b64 $V/jbig2.wasm
   printf '</script>\n<script type="text/plain" id="pdfjs-wasm-openjpeg">'
   b64 $V/openjpeg.wasm
-  printf '</script>\n<script nonce="rakbaca">\n'
+  printf '</script>\n<script>\n'
   cat $JS
   printf '</script>\n</body>\n</html>\n'
 } > rak-baca.html

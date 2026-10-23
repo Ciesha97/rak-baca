@@ -377,10 +377,38 @@ async function openZip(blob) {
     async text(path) { const b = await bytes(path); return decodeText(b, xmlEncoding(b)); },
     async blob(path, type) {
       const b = await bytes(path);
-      return new Blob([b], { type: type || sniffImage(b) || IMG_EXT[extOf(path)] || 'application/octet-stream' });
+      // isi berkas lebih dipercaya daripada jenis yang ditulis dokumen (manifest EPUB bisa berbohong)
+      return new Blob([b], { type: sniffImage(b) || type || IMG_EXT[extOf(path)] || 'application/octet-stream' });
     },
   };
 }
+/* URL untuk gambar/media dari dokumen. URL blob: punya origin yang sama dengan aplikasi, jadi
+   bila SVG/HTML dari dokumen dibuka di tab baru, skripnya bisa membaca rak. Karena itu blob: hanya
+   untuk gambar raster, audio, dan video; SVG memakai data: (origin terpisah, tak bisa dibuka di
+   tab baru); jenis lain ditolak. */
+const RASTER_TYPE = /^image\/(png|jpeg|gif|webp|bmp|avif|x-icon)$/i;
+const MEDIA_TYPE = /^(audio|video)\/[\w.+-]+$/i;
+function mediaUrl(bytes, type) {
+  type = String(type || '').split(';')[0].trim().toLowerCase();
+  if (type === 'image/svg+xml') {
+    let s = '';
+    // potongan kelipatan 3 supaya base64 tiap potongan bisa disambung tanpa padding di tengah
+    for (let i = 0; i < bytes.length; i += 32766) s += btoa(latin1(bytes.subarray(i, i + 32766)));
+    return 'data:image/svg+xml;base64,' + s;
+  }
+  if (RASTER_TYPE.test(type) || MEDIA_TYPE.test(type)) return URL.createObjectURL(new Blob([bytes], { type }));
+  return null;
+}
+async function blobUrl(blob) {
+  if (!blob) return null;
+  const head = new Uint8Array(await blob.slice(0, 256).arrayBuffer());
+  const type = (sniffImage(head) || String(blob.type || '').split(';')[0].trim()).toLowerCase();
+  if (type !== blob.type && (RASTER_TYPE.test(type) || MEDIA_TYPE.test(type))) blob = new Blob([blob], { type });
+  if (type === 'image/svg+xml') return mediaUrl(new Uint8Array(await blob.arrayBuffer()), type);
+  if (RASTER_TYPE.test(type) || MEDIA_TYPE.test(type)) return URL.createObjectURL(blob);
+  return null;
+}
+const revokeUrl = u => { if (u && u.startsWith('blob:')) URL.revokeObjectURL(u); };
 /* ZIP tanpa kompresi (untuk membuat .docx) */
 const CRC_T = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
 const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };

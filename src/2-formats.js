@@ -285,7 +285,7 @@ async function loadPdf(file, hooks) {
 function imagePages(meta, list) {
   const urls = new Map(), sizes = [];
   const url = async i => {
-    if (!urls.has(i)) urls.set(i, list[i].blob().then(b => URL.createObjectURL(b)));
+    if (!urls.has(i)) urls.set(i, list[i].blob().then(blobUrl));
     return urls.get(i);
   };
   return {
@@ -294,7 +294,7 @@ function imagePages(meta, list) {
     async sizeAsync(i) { if (!sizes[i]) sizes[i] = (await imageSize(await url(i))) || { w: 1000, h: 1414 }; return sizes[i]; },
     url, text: async () => '',
     async cover() { return thumbnail(await list[0].blob()); },
-    close() { for (const p of urls.values()) p.then(u => URL.revokeObjectURL(u)); urls.clear(); },
+    close() { for (const p of urls.values()) p.then(revokeUrl); urls.clear(); },
   };
 }
 async function loadImage(file) {
@@ -390,7 +390,7 @@ async function loadEpub(zip, file) {
 
   const urls = new Map(), css = new Map();
   const res = async path => {
-    if (!urls.has(path)) urls.set(path, zip.blob(path, byPath.get(path)?.type).then(b => URL.createObjectURL(b)).catch(() => null));
+    if (!urls.has(path)) urls.set(path, zip.blob(path, byPath.get(path)?.type).then(blobUrl).catch(() => null));
     return urls.get(path);
   };
   const cssText = async path => {
@@ -444,7 +444,7 @@ async function loadEpub(zip, file) {
       } catch (e) { /* tanpa sampul */ }
       return null;
     },
-    close() { for (const p of urls.values()) p.then(u => u && URL.revokeObjectURL(u)); urls.clear(); },
+    close() { for (const p of urls.values()) p.then(revokeUrl); urls.clear(); },
   };
 }
 
@@ -715,7 +715,9 @@ async function attachImages(zip, list, urls) {
     try {
       const b = await zip.blob(path);
       if (!SAFE_IMG.test(b.type)) throw new Error('jenis gambar');
-      const u = URL.createObjectURL(b); urls.push(u); img.src = u;
+      const u = await blobUrl(b);
+      if (!u) throw new Error('jenis gambar');
+      urls.push(u); img.src = u;
     } catch (e) { img.replaceWith(el('span', { class: 'img-miss', text: '[gambar]' })); }
   }));
 }
@@ -947,7 +949,7 @@ async function loadDocx(zip, file) {
   const first = frag.querySelector('h1');
   return buildFlow({
     format: 'docx', title: title || (first && txt(first).slice(0, 140)) || niceTitle(file.name), author,
-    close: () => urls.forEach(u => URL.revokeObjectURL(u)),
+    close: () => urls.forEach(revokeUrl),
   }, [{ frag }]);
 }
 
@@ -1116,7 +1118,7 @@ async function loadOdt(zip, file) {
   }
   await attachImages(zip, images, urls);
   const first = frag.querySelector('h1');
-  return buildFlow({ format: 'odt', title: title || (first && txt(first).slice(0, 140)) || niceTitle(file.name), author, close: () => urls.forEach(u => URL.revokeObjectURL(u)) }, [{ frag }]);
+  return buildFlow({ format: 'odt', title: title || (first && txt(first).slice(0, 140)) || niceTitle(file.name), author, close: () => urls.forEach(revokeUrl) }, [{ frag }]);
 }
 
 /* ---------- FB2 (FictionBook) ---------- */
@@ -1143,7 +1145,7 @@ async function loadFb2(bytes, file) {
         const arr = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
         const type = sniffImage(arr);
-        if (type) u = URL.createObjectURL(new Blob([arr], { type }));
+        if (type) u = mediaUrl(arr, type);
       } catch (e) { u = null; }
     }
     urls.set(id, u);
@@ -1229,7 +1231,7 @@ async function loadFb2(bytes, file) {
   return buildFlow({
     format: 'fb2', title: txt(find(ti, 'book-title')) || niceTitle(file.name), author: authors.join(', '), lang: txt(find(ti, 'lang')),
     cover: async () => { const id = coverImg && href(coverImg).replace(/^#/, ''); const u = id && imgUrl(id); if (!u) return null; return thumbnail(await loadImg(u)); },
-    close: () => urls.forEach(u => u && URL.revokeObjectURL(u)),
+    close: () => urls.forEach(revokeUrl),
   }, parts);
 }
 async function loadImg(url) {
@@ -1344,7 +1346,7 @@ async function loadMobi(file) {
     const idx = firstImg + n - 1;
     if (urls.has(idx)) return urls.get(idx);
     let u = null;
-    if (firstImg && idx < nrec) { const b = rec(idx); const type = sniffImage(b); if (type) u = URL.createObjectURL(new Blob([b], { type })); }
+    if (firstImg && idx < nrec) { const b = rec(idx); const type = sniffImage(b); if (type) u = mediaUrl(b, type); }
     urls.set(idx, u);
     return u;
   };
@@ -1376,7 +1378,7 @@ async function loadMobi(file) {
   return buildFlow({
     format: 'mobi', title: title || niceTitle(file.name), author: author.join(', '), lang, toc,
     cover: async () => { const u = coverOff >= 0 ? recUrl(coverOff + 1) : null; return u ? thumbnail(await loadImg(u)) : null; },
-    close: () => urls.forEach(u => u && URL.revokeObjectURL(u)),
+    close: () => urls.forEach(revokeUrl),
   }, out);
 }
 
@@ -1432,7 +1434,7 @@ function rtfToFrag(bytes) {
         const hex = pict.hex.join('').replace(/[^0-9a-f]/gi, '');
         const arr = new Uint8Array(hex.length >> 1);
         for (let k = 0; k < arr.length; k++) arr[k] = parseInt(hex.substr(k * 2, 2), 16);
-        const img = el('img', { src: URL.createObjectURL(new Blob([arr], { type: pict.type })), alt: '' });
+        const img = el('img', { src: mediaUrl(arr, pict.type), alt: '' });
         if (pict.w) img.setAttribute('width', Math.round(pict.w / 15));
         p().append(img);
         pict = null;

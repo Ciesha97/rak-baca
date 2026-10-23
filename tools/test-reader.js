@@ -267,6 +267,7 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
   await open('contoh.svg');
   ok(await imgsLoaded('.pgv img'), 'gambar SVG tampil');
   ok(!(await pwned()), 'skrip di dalam SVG tidak berjalan');
+  ok(/^data:/.test(await page.getAttribute('.pgv img', 'src')), 'SVG memakai data: (bukan blob: se-origin yang bisa dibuka di tab baru)');
   await open('contoh.cbz');
   ok(await text('#rd-title') === 'Komik Contoh', 'judul CBZ dari ComicInfo.xml');
   ok(/^1\/3/.test(await text('#rd-pos')), 'komik 3 halaman');
