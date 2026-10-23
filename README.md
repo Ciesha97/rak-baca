@@ -102,6 +102,8 @@ sh tools/update-pdfjs.sh 6.4.299          # ganti versi pdf.js
 
 **Rilis:** ubah nomor di berkas `VERSION`, jalankan `sh tools/build.sh`, commit, lalu buat tag `v<versi>` (mis. `v1.0.2`) atau buat Release dengan tag itu di GitHub. Workflow akan menguji semua format lalu melampirkan `rak-baca.html` ke halaman rilis. Setiap push ke `main` juga memperbarui versi online di GitHub Pages.
 
+> 🏷️ **Penyimpanan Rak Baca berlabel khusus:** IndexedDB `rak-baca` dan localStorage `rakbaca.settings.v1`. Semua situs GitHub Pages di satu akun berbagi alamat yang sama (`<akun>.github.io`), jadi situs Pages lain di akun itu **jangan memakai nama penyimpanan tersebut** agar rak dan catatan pengunjung tidak tertimpa. Situs lain itu tetap bisa *membaca* data Rak Baca, jadi jangan pasang skrip pihak ketiga (iklan, analitik) di sana; bila perlu, pindahkan Rak Baca ke organisasi atau domain sendiri.
+
 Laporan bug dan usulan fitur sangat diterima lewat [Issues](https://github.com/Ciesha97/rak-baca/issues). Sertakan versi (tertulis di kaki halaman rak), peramban/perangkat, dan bila bisa, contoh dokumennya.
 
 ## Lisensi
