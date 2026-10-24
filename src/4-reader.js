@@ -56,6 +56,7 @@ const Reader = (() => {
     onChange();
     Shelf.enrich(book, doc).then(() => { if (book === b) document.title = b.title + ' · Rak Baca'; });
     stage().focus?.();
+    Tips.maybe();
   }
   function close() {
     token++;
@@ -120,7 +121,9 @@ const Reader = (() => {
   function onChange() {
     if (!view) return;
     const l = view.label();
-    $('#rd-pos').textContent = l.pos;
+    // di layar sempit kata "Hlm." disembunyikan agar bilah bawah tidak melebar
+    $('#rd-pos').innerHTML = esc(l.pos).replace(/^Hlm\. /, '<span class="hide-narrow">Hlm. </span>');
+    $('#rd-pos').title = l.title || '';
     if (!seeking) $('#rd-seek').value = Math.round(view.progress() * 1000);
     $('#rd-sub').textContent = l.sub || book.author || '';
     if (focusPos) focusPos.textContent = l.pos;
@@ -417,6 +420,7 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
+      { label: 'Petunjuk tombol', icon: 'info', run: () => Tips.show() },
       { label: 'Cari di dokumen', icon: 'search', run: () => openPanel('search') },
       { label: $('#rd-mark').getAttribute('aria-pressed') === 'true' ? 'Hapus penanda halaman ini' : 'Tandai halaman ini', icon: 'bookmark', run: toggleMark },
       { label: 'Catatan', icon: 'note', run: () => openPanel('notes') },
@@ -435,7 +439,7 @@ const Reader = (() => {
     const k = e.key;
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'f') { e.preventDefault(); if (doc) openPanel('search'); return; }
     if (k === 'Escape') {
-      if (Translate.isOpen()) Translate.close(); else if (notePop) closeNote(); else if (pop) closePop(); else if (panel) closePanel();
+      if (Tips.isOpen()) Tips.close(); else if (Translate.isOpen()) Translate.close(); else if (notePop) closeNote(); else if (pop) closePop(); else if (panel) closePanel();
       else if ($('#reader').classList.contains('focus')) toggleFocus();
       else if (!document.fullscreenElement) App.toShelf();
       return;
@@ -647,6 +651,37 @@ const TTS = (() => {
 /* ================= Terjemahan ke bahasa Indonesia ================= */
 /* Memakai penerjemah bawaan peramban (Chrome 138+): model dijalankan di perangkat, teks tidak
    dikirim ke internet. Bila tidak tersedia, pengguna bisa memilih membuka Google Terjemahan. */
+/* ---------- petunjuk tombol: muncul sekali saat pertama membuka dokumen ---------- */
+const Tips = (() => {
+  const KEY = 'rakbaca.tips.v1';
+  let box = null;
+  const isOpen = () => !!box;
+  const seen = () => { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return true; } };
+  function close() {
+    if (!box) return;
+    box.remove(); box = null;
+    try { localStorage.setItem(KEY, '1'); } catch (e) { /* mode penyamaran */ }
+  }
+  function show() {
+    box?.remove();
+    const touch = matchMedia('(hover: none)').matches;
+    // hanya tombol yang memang tampil di layar ini (di ponsel sebagian pindah ke menu ⋯)
+    const btns = [...document.querySelectorAll('.rd-top .icon-btn')].filter(b => b.offsetParent && !b.disabled);
+    const rows = btns.map(b => `<li>${b.querySelector('svg')?.outerHTML || `<i class="aa">${esc(b.textContent.trim())}</i>`}<span>${esc(b.getAttribute('aria-label') || b.title)}</span></li>`).join('');
+    const extra = touch
+      ? ['Ketuk tepi kiri/kanan atau geser untuk ganti halaman.', 'Ketuk tengah layar untuk menyembunyikan atau memunculkan bilah.', 'Tahan untuk memblok teks, lalu ketuk ikon pena untuk mencatat.']
+      : ['← → atau Spasi untuk ganti halaman.', 'Blok teks dengan mouse, lalu tekan ikon pena (N) untuk mencatat.'];
+    box = el('div', { class: 'tips', role: 'dialog', 'aria-label': 'Petunjuk tombol' });
+    box.innerHTML = `<b>Petunjuk tombol</b><ul>${rows}</ul><p>${extra.map(esc).join('<br>')}<br>Fitur lain ada di menu ⋯, termasuk petunjuk ini.</p><div class="acts"><button class="btn primary" data-ok>Mengerti</button></div>`;
+    $('[data-ok]', box).onclick = close;
+    $('#reader').append(box);
+  }
+  const maybe = () => { if (!seen()) show(); };
+  // menekan tombol mana pun di bilah atas berarti pengguna sudah mulai memakai; petunjuk ditutup
+  document.addEventListener('pointerdown', e => { if (box && e.target.closest?.('.rd-top')) close(); }, true);
+  return { show, close, maybe, isOpen };
+})();
+
 const Translate = (() => {
   let box = null, run = 0;
   const tools = new Map(), memo = new Map();

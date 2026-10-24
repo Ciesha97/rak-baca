@@ -18,6 +18,8 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
 (async () => {
   const browser = await pw.chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  // petunjuk tombol pertama kali diuji tersendiri di bagian ponsel
+  await ctx.addInitScript(() => { try { localStorage.setItem('rakbaca.tips.v1', '1'); } catch (e) {} });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
@@ -81,7 +83,7 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
   ok(toc.length === 2 && /Bab Dua/.test(toc[0]) && /Bab Tiga/.test(toc[1]), 'kerangka (outline) PDF jadi daftar isi: ' + toc.join('|'));
   await page.click('.toc button >> nth=1');
   await page.waitForTimeout(500);
-  ok(/^3\/3/.test(await text('#rd-pos')), 'klik daftar isi PDF ke halaman 3: ' + await text('#rd-pos'));
+  ok(/^Hlm\. 3\/3/.test(await text('#rd-pos')), 'klik daftar isi PDF ke halaman 3: ' + await text('#rd-pos'));
   await closePanel().catch(() => {});
   ok(await searchFor('kata kunci unik') >= 1, 'pencarian PDF menemukan hasil');
   await page.waitForSelector('.textLayer mark.cur', { timeout: 10000 }).catch(() => {});
@@ -94,7 +96,7 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
   await page.keyboard.press('Escape');
   await page.click('#rd-prev');
   await page.waitForTimeout(300);
-  ok(/^2\/3/.test(await text('#rd-pos')), 'tombol sebelumnya di mode per halaman: ' + await text('#rd-pos'));
+  ok(/^Hlm\. 2\/3/.test(await text('#rd-pos')), 'tombol sebelumnya di mode per halaman: ' + await text('#rd-pos'));
 
   /* ---------- EPUB ---------- */
   console.log('EPUB');
@@ -114,7 +116,7 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
   await page.keyboard.press('ArrowRight');
   await page.waitForTimeout(200);
   const pos2 = await text('#rd-pos');
-  ok(pos1 !== pos2 && /^2\//.test(pos2), `halaman berikutnya di mode halaman (${pos1} -> ${pos2})`);
+  ok(pos1 !== pos2 && /^Hlm\. 2\/\d+ di bab ini · \d+%$/.test(pos2), `halaman berikutnya di mode halaman (${pos1} -> ${pos2})`);
   await page.keyboard.press('ArrowLeft');
   await page.waitForTimeout(200);
   await page.click('.doc a[data-note]');
@@ -277,10 +279,10 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
   ok(/^data:/.test(await page.getAttribute('.pgv img', 'src')), 'SVG memakai data: (bukan blob: se-origin yang bisa dibuka di tab baru)');
   await open('contoh.cbz');
   ok(await text('#rd-title') === 'Komik Contoh', 'judul CBZ dari ComicInfo.xml');
-  ok(/^1\/3/.test(await text('#rd-pos')), 'komik 3 halaman');
+  ok(/^Hlm\. 1\/3/.test(await text('#rd-pos')), 'komik 3 halaman');
   await page.keyboard.press('ArrowRight');
   await page.waitForTimeout(300);
-  ok(/^2\/3/.test(await text('#rd-pos')), 'halaman komik berikutnya');
+  ok(/^Hlm\. 2\/3/.test(await text('#rd-pos')), 'halaman komik berikutnya');
 
   /* ---------- teks besar ---------- */
   console.log('Teks besar');
@@ -439,6 +441,10 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await mp.setInputFiles('#file', path.join(dir, 'contoh.epub'));
     await mp.waitForSelector('#reader:not([hidden]) .doc');
     await mp.waitForTimeout(400);
+    const tips = await mp.$$eval('.tips li span', l => l.map(x => x.textContent));
+    ok(tips.includes('Catatan') && tips.includes('Pengaturan tampilan') && !tips.includes('Bacakan') && /Ketuk tengah/.test(await mp.textContent('.tips')), 'pertama membuka dokumen: petunjuk tombol yang tampil di layar ini: ' + tips.join(', '));
+    await mp.tap('.tips [data-ok]');
+    ok(!(await mp.$('.tips')) && await mp.evaluate(() => localStorage.getItem('rakbaca.tips.v1')) === '1', 'petunjuk ditutup dengan "Mengerti" dan tidak muncul lagi');
     ok(await mp.isVisible('#rd-title') && await mp.$eval('#rd-title', e => e.scrollWidth <= e.clientWidth + 1), 'ponsel: judul pendek di bilah atas tidak terpotong');
     await mp.tap('#stage', { position: { x: 195, y: 420 } });
     await mp.waitForTimeout(500);
@@ -446,6 +452,12 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await mp.tap('#stage', { position: { x: 195, y: 420 } });
     await mp.waitForTimeout(500);
     ok(!(await mp.$('#reader.focus')) && await mp.isVisible('.rd-top'), 'ponsel: ketuk tengah lagi memunculkan bilah');
+    ok(await mp.evaluate(() => document.documentElement.scrollWidth <= innerWidth && [...document.querySelectorAll('.rd-top .icon-btn, .rd-bottom .icon-btn')].filter(b => b.offsetParent).every(b => b.getBoundingClientRect().right <= innerWidth)), 'ponsel: semua tombol bilah atas dan bawah muat di layar');
+    await mp.click('#rd-more'); await mp.click('.menu button:has-text("Petunjuk tombol")');
+    ok(await mp.isVisible('.tips'), 'petunjuk bisa dibuka lagi dari menu ⋯');
+    await mp.click('#rd-back');
+    await mp.waitForSelector('#shelf:not([hidden])');
+    ok(await mp.$eval('#sort', e => e.scrollWidth <= e.clientWidth + 1 && e.clientWidth >= 140) && await mp.isVisible('#btn-open'), 'ponsel: pilihan urutan di rak tidak terpotong');
     await mc.close();
   }
 

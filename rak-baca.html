@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-m6eORgRHRZ2ba2vZMiE7495JhTNwBswpgzQREAWZWyE=' 'wasm-unsafe-eval' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data: blob:; connect-src data: blob:; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/mO+NZU19v38is63JJB0oWayfWe6SXTtsx4dlAfnc2g=' 'wasm-unsafe-eval' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data: blob:; connect-src data: blob:; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">
 <meta name="color-scheme" content="light dark">
 <meta name="version" content="1.0.2">
 <meta name="description" content="Rak Baca: pembaca dokumen universal tanpa internet. Buka PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, gambar, dan komik langsung di peramban.">
@@ -266,6 +266,13 @@ dialog:has(.note-ed){width:min(600px,calc(100vw - 32px))}
 ::highlight(rb-note){background-color:rgba(120,190,120,.3)}
 
 /* terjemahan */
+.tips{position:absolute;z-index:40;top:58px;right:8px;width:min(330px,calc(100% - 16px));max-height:calc(100% - 140px);overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;font-size:13.5px}
+.tips ul{list-style:none;margin:10px 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.tips li{display:flex;align-items:center;gap:8px;line-height:1.25}
+.tips li svg,.tips li .aa{flex:none;width:18px;height:18px;color:var(--ink-2)}
+.tips li .aa{font-style:normal;font-size:13px;line-height:18px;text-align:center}
+.tips p{margin:0 0 12px;color:var(--ink-2);line-height:1.5}
+.tips .acts{display:flex;justify-content:flex-end}
 .tr-pop{position:absolute;z-index:36;left:50%;bottom:16px;transform:translateX(-50%);width:min(720px,calc(100% - 24px));max-height:62%;display:flex;flex-direction:column;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 .tr-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px 16px;border-bottom:1px solid var(--line)}
 .tr-head b{flex:1;font-size:14px}
@@ -385,6 +392,9 @@ dialog:has(.note-ed){width:min(600px,calc(100vw - 32px))}
 }
 @media (max-width:420px){
   .rd-top .icon-btn{width:36px}
+  .hide-narrow{display:none}
+  .rd-bottom{gap:6px}
+  .rd-bottom input[type="range"]{min-width:40px}
   #rd-search,#rd-tr,#rd-mark{display:none}
 }
 @media print{
@@ -436,7 +446,7 @@ dialog:has(.note-ed){width:min(600px,calc(100vw - 32px))}
         <option value="progress">Kemajuan</option>
       </select>
       <button class="icon-btn" id="btn-theme" title="Tema tampilan" aria-label="Tema tampilan"><svg class="ic"><use href="#i-sun"/></svg></button>
-      <button class="btn primary" id="btn-open"><svg class="ic"><use href="#i-plus"/></svg>Buka dokumen</button>
+      <button class="btn primary" id="btn-open"><svg class="ic"><use href="#i-plus"/></svg>Buka<span class="hide-narrow"> dokumen</span></button>
     </div>
   </div></header>
   <main class="shelf-main">
@@ -3000,8 +3010,11 @@ class FlowView {
   label() {
     const sec = this.doc.sections[this.sec];
     const pct = Math.round(this.progress() * 100) + '%';
+    // halaman dihitung per bab (bagian EPUB), persen untuk seluruh dokumen
+    const inSec = this.total > 1 ? ' di bab ini' : '';
     return {
-      pos: this.mode === 'paged' ? `${this.page + 1}/${this.pages} · ${pct}` : pct,
+      pos: this.mode === 'paged' ? `Hlm. ${this.page + 1}/${this.pages}${inSec} · ${pct}` : pct,
+      title: this.mode === 'paged' ? `Halaman ${this.page + 1} dari ${this.pages}${inSec} · ${pct} dari seluruh dokumen` : `${pct} dari seluruh dokumen`,
       sub: this.total > 1 ? sec?.title || `Bagian ${this.sec + 1}` : '',
     };
   }
@@ -3218,7 +3231,7 @@ class FixedView {
   }
   progress() { return this.pg.length > 1 ? (this.cur + (this.mode === 'single' ? 1 : clamp(this.pos().y + 0.5, 0, 1))) / this.pg.length : 1; }
   seek(f) { this.go({ p: Math.round(f * (this.pg.length - 1)) }); }
-  label() { return { pos: `${this.cur + 1}/${this.pg.length}`, sub: '' }; }
+  label() { return { pos: `Hlm. ${this.cur + 1}/${this.pg.length}`, title: `Halaman ${this.cur + 1} dari ${this.pg.length}`, sub: '' }; }
   report() { this.cb.change?.(); }
 
   /* ---------- render ---------- */
@@ -3478,6 +3491,7 @@ const Reader = (() => {
     onChange();
     Shelf.enrich(book, doc).then(() => { if (book === b) document.title = b.title + ' · Rak Baca'; });
     stage().focus?.();
+    Tips.maybe();
   }
   function close() {
     token++;
@@ -3542,7 +3556,9 @@ const Reader = (() => {
   function onChange() {
     if (!view) return;
     const l = view.label();
-    $('#rd-pos').textContent = l.pos;
+    // di layar sempit kata "Hlm." disembunyikan agar bilah bawah tidak melebar
+    $('#rd-pos').innerHTML = esc(l.pos).replace(/^Hlm\. /, '<span class="hide-narrow">Hlm. </span>');
+    $('#rd-pos').title = l.title || '';
     if (!seeking) $('#rd-seek').value = Math.round(view.progress() * 1000);
     $('#rd-sub').textContent = l.sub || book.author || '';
     if (focusPos) focusPos.textContent = l.pos;
@@ -3839,6 +3855,7 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
+      { label: 'Petunjuk tombol', icon: 'info', run: () => Tips.show() },
       { label: 'Cari di dokumen', icon: 'search', run: () => openPanel('search') },
       { label: $('#rd-mark').getAttribute('aria-pressed') === 'true' ? 'Hapus penanda halaman ini' : 'Tandai halaman ini', icon: 'bookmark', run: toggleMark },
       { label: 'Catatan', icon: 'note', run: () => openPanel('notes') },
@@ -3857,7 +3874,7 @@ const Reader = (() => {
     const k = e.key;
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'f') { e.preventDefault(); if (doc) openPanel('search'); return; }
     if (k === 'Escape') {
-      if (Translate.isOpen()) Translate.close(); else if (notePop) closeNote(); else if (pop) closePop(); else if (panel) closePanel();
+      if (Tips.isOpen()) Tips.close(); else if (Translate.isOpen()) Translate.close(); else if (notePop) closeNote(); else if (pop) closePop(); else if (panel) closePanel();
       else if ($('#reader').classList.contains('focus')) toggleFocus();
       else if (!document.fullscreenElement) App.toShelf();
       return;
@@ -4069,6 +4086,37 @@ const TTS = (() => {
 /* ================= Terjemahan ke bahasa Indonesia ================= */
 /* Memakai penerjemah bawaan peramban (Chrome 138+): model dijalankan di perangkat, teks tidak
    dikirim ke internet. Bila tidak tersedia, pengguna bisa memilih membuka Google Terjemahan. */
+/* ---------- petunjuk tombol: muncul sekali saat pertama membuka dokumen ---------- */
+const Tips = (() => {
+  const KEY = 'rakbaca.tips.v1';
+  let box = null;
+  const isOpen = () => !!box;
+  const seen = () => { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return true; } };
+  function close() {
+    if (!box) return;
+    box.remove(); box = null;
+    try { localStorage.setItem(KEY, '1'); } catch (e) { /* mode penyamaran */ }
+  }
+  function show() {
+    box?.remove();
+    const touch = matchMedia('(hover: none)').matches;
+    // hanya tombol yang memang tampil di layar ini (di ponsel sebagian pindah ke menu ⋯)
+    const btns = [...document.querySelectorAll('.rd-top .icon-btn')].filter(b => b.offsetParent && !b.disabled);
+    const rows = btns.map(b => `<li>${b.querySelector('svg')?.outerHTML || `<i class="aa">${esc(b.textContent.trim())}</i>`}<span>${esc(b.getAttribute('aria-label') || b.title)}</span></li>`).join('');
+    const extra = touch
+      ? ['Ketuk tepi kiri/kanan atau geser untuk ganti halaman.', 'Ketuk tengah layar untuk menyembunyikan atau memunculkan bilah.', 'Tahan untuk memblok teks, lalu ketuk ikon pena untuk mencatat.']
+      : ['← → atau Spasi untuk ganti halaman.', 'Blok teks dengan mouse, lalu tekan ikon pena (N) untuk mencatat.'];
+    box = el('div', { class: 'tips', role: 'dialog', 'aria-label': 'Petunjuk tombol' });
+    box.innerHTML = `<b>Petunjuk tombol</b><ul>${rows}</ul><p>${extra.map(esc).join('<br>')}<br>Fitur lain ada di menu ⋯, termasuk petunjuk ini.</p><div class="acts"><button class="btn primary" data-ok>Mengerti</button></div>`;
+    $('[data-ok]', box).onclick = close;
+    $('#reader').append(box);
+  }
+  const maybe = () => { if (!seen()) show(); };
+  // menekan tombol mana pun di bilah atas berarti pengguna sudah mulai memakai; petunjuk ditutup
+  document.addEventListener('pointerdown', e => { if (box && e.target.closest?.('.rd-top')) close(); }, true);
+  return { show, close, maybe, isOpen };
+})();
+
 const Translate = (() => {
   let box = null, run = 0;
   const tools = new Map(), memo = new Map();

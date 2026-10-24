@@ -242,8 +242,11 @@ class FlowView {
   label() {
     const sec = this.doc.sections[this.sec];
     const pct = Math.round(this.progress() * 100) + '%';
+    // halaman dihitung per bab (bagian EPUB), persen untuk seluruh dokumen
+    const inSec = this.total > 1 ? ' di bab ini' : '';
     return {
-      pos: this.mode === 'paged' ? `${this.page + 1}/${this.pages} · ${pct}` : pct,
+      pos: this.mode === 'paged' ? `Hlm. ${this.page + 1}/${this.pages}${inSec} · ${pct}` : pct,
+      title: this.mode === 'paged' ? `Halaman ${this.page + 1} dari ${this.pages}${inSec} · ${pct} dari seluruh dokumen` : `${pct} dari seluruh dokumen`,
       sub: this.total > 1 ? sec?.title || `Bagian ${this.sec + 1}` : '',
     };
   }
@@ -460,7 +463,7 @@ class FixedView {
   }
   progress() { return this.pg.length > 1 ? (this.cur + (this.mode === 'single' ? 1 : clamp(this.pos().y + 0.5, 0, 1))) / this.pg.length : 1; }
   seek(f) { this.go({ p: Math.round(f * (this.pg.length - 1)) }); }
-  label() { return { pos: `${this.cur + 1}/${this.pg.length}`, sub: '' }; }
+  label() { return { pos: `Hlm. ${this.cur + 1}/${this.pg.length}`, title: `Halaman ${this.cur + 1} dari ${this.pg.length}`, sub: '' }; }
   report() { this.cb.change?.(); }
 
   /* ---------- render ---------- */
