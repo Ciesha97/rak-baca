@@ -4,7 +4,7 @@
 
 **Pembaca dokumen universal yang bekerja tanpa internet.** Buka PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, gambar, dan komik dalam satu aplikasi. Dokumen dibaca langsung di perangkat Anda dan tidak pernah diunggah ke mana pun.
 
-**[▶ Coba langsung di peramban](https://ciesha97.github.io/rak-baca/)** · **[⬇ Unduh satu berkas HTML](https://github.com/Ciesha97/rak-baca/releases/latest)**
+**[▶ Coba langsung di peramban](https://ciesha97.github.io/rak-baca/)** · **[⬇ Unduh satu berkas HTML](https://github.com/Ciesha97/rak-baca/blob/main/rak-baca.html)**
 
 ![Rak berisi buku dengan sampul, kartu "Lanjutkan membaca", dan filter format](docs/tangkapan/rak.png)
 
@@ -45,7 +45,7 @@
 Tidak ada yang perlu dipasang. Pilih salah satu:
 
 1. **Versi online.** Buka **https://ciesha97.github.io/rak-baca/** di Chrome atau Edge (paling teruji). Firefox dan Safari versi terbaru seharusnya juga bisa. Tidak perlu daftar atau memasang apa pun. Meski dibuka dari internet, dokumen tetap dibaca di perangkat Anda sendiri.
-2. **Satu berkas HTML (bisa tanpa internet sama sekali).** Unduh `rak-baca.html` dari halaman [Releases](https://github.com/Ciesha97/rak-baca/releases/latest), lalu klik dua kali untuk membuka di peramban. Berkas ini bisa disalin ke flashdisk atau dikirim ke orang lain.
+2. **Satu berkas HTML (bisa tanpa internet sama sekali).** Buka [`rak-baca.html`](https://github.com/Ciesha97/rak-baca/blob/main/rak-baca.html), klik tombol **Download raw file** (ikon ⬇ di kanan atas), lalu klik dua kali berkas yang terunduh untuk membuka di peramban. Berkas ini selalu versi terbaru. Berkas ini bisa disalin ke flashdisk atau dikirim ke orang lain.
 
 Lalu klik **Buka dokumen** atau seret berkas ke jendela.
 
@@ -116,4 +116,4 @@ Komponen pihak ketiga: pdf.js © Mozilla Foundation, lisensi Apache-2.0 (`vendor
 
 ### English
 
-**Rak Baca** ("reading shelf") is an offline, universal document reader that runs entirely in your browser, with nothing to install. It opens PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, images, and CBZ comics. It also has a library with covers and reading progress, adjustable typography, themes, search, bookmarks, notes with Word export, text-to-speech, and on-device translation into Indonesian (Chrome 138+ on desktop). Documents never leave your device. [Try it online](https://ciesha97.github.io/rak-baca/) or download a release. The interface is in Indonesian. MIT licensed.
+**Rak Baca** ("reading shelf") is an offline, universal document reader that runs entirely in your browser, with nothing to install. It opens PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, images, and CBZ comics. It also has a library with covers and reading progress, adjustable typography, themes, search, bookmarks, notes with Word export, text-to-speech, and on-device translation into Indonesian (Chrome 138+ on desktop). Documents never leave your device. [Try it online](https://ciesha97.github.io/rak-baca/) or [download the single HTML file](https://github.com/Ciesha97/rak-baca/blob/main/rak-baca.html). The interface is in Indonesian. MIT licensed.
