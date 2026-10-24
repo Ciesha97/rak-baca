@@ -235,6 +235,13 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
   ok(await text('.doc pre code') === 'console.log("<b>tidak tebal</b>");', 'blok kode Markdown tidak ditafsirkan');
   ok(await count('.doc a[data-note]') === 1, 'catatan kaki Markdown');
   ok(await count('.doc script, .doc img[src="x"]') === 0, 'HTML berbahaya di Markdown dibuang');
+  ok(await page.evaluate(async () => {
+    const a = await loadMd('---\ntitle: "Judul Depan"\nauthor: Ani\nlang: id\n---\n\n# Bab 1\n\nIsi.', { name: 'a.md' });
+    const ta = (await a.sections[0].load()).textContent;
+    const b = await loadMd('---\n\nParagraf biasa di antara garis.\n\n---\n\nLanjut.', { name: 'b.md' });
+    const tb = (await b.sections[0].load()).textContent;
+    return a.title === 'Judul Depan' && a.author === 'Ani' && a.lang === 'id' && !/title:/.test(ta) && /Paragraf biasa/.test(tb);
+  }), 'front matter YAML Markdown dipakai sebagai judul/penulis dan tidak ditampilkan');
 
   /* ---------- TXT ---------- */
   console.log('TXT');
@@ -355,7 +362,7 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     tp.on('pageerror', e => errors.push('pageerror (terjemahan): ' + e.message));
     await tp.addInitScript(() => {
       window.__tr = [];
-      self.LanguageDetector = { create: async () => ({ detect: async t => [{ detectedLanguage: window.__lang || 'en', confidence: 0.9 }] }) };
+      self.LanguageDetector = { availability: async () => 'available', create: async () => ({ detect: async t => [{ detectedLanguage: window.__lang || 'en', confidence: 0.9 }] }) };
       self.Translator = {
         availability: async o => (o.sourceLanguage === 'en' && o.targetLanguage === 'id' ? 'downloadable' : 'unavailable'),
         create: async o => { o.monitor?.({ addEventListener: (n, f) => f({ loaded: 1 }) }); return { translate: async t => { window.__tr.push(t); return 'ID: ' + t; } }; },
@@ -395,6 +402,51 @@ const ok = (cond, msg) => { if (cond) passed++; else { fails.push(msg); console.
     await np.click('.tr-pop button:has-text("Google Terjemahan")');
     ok(/^https:\/\/translate\.google\.com\/.*tl=id.*Pendahuluan/.test(await np.evaluate(() => decodeURIComponent(window.__opened || ''))), 'tombol membuka Google Terjemahan ke bahasa Indonesia');
     await np.close();
+    // model belum terunduh dan tidak ada internet: jangan diam menunggu, beri tahu dan tawarkan Google
+    const op = await ctx.newPage();
+    await op.addInitScript(() => {
+      self.LanguageDetector = { availability: async () => 'downloadable', create: () => new Promise(() => {}) };
+      self.Translator = { availability: async () => 'downloadable', create: () => new Promise(() => {}) };
+      Object.defineProperty(Navigator.prototype, 'onLine', { get: () => false });
+    });
+    await op.goto(page_url);
+    await op.waitForSelector('#grid .card');
+    await op.click('#grid .card:has-text("Laporan Word Contoh") .card-open');
+    await op.waitForSelector('.doc h1');
+    await op.click('#rd-tr');
+    await op.waitForSelector('.tr-pop .tr-msg:has-text("butuh internet")', { timeout: 8000 }).catch(() => {});
+    ok(/butuh internet/.test(await op.textContent('.tr-pop')) && await op.$('.tr-pop button:has-text("Google Terjemahan")'), 'model terjemahan belum ada + offline: pesan jelas, tidak menggantung');
+    await op.close();
+  }
+
+  /* ---------- mode fokus (bilah disembunyikan) di komputer dan ponsel ---------- */
+  console.log('Mode fokus');
+  {
+    const visible = pg => pg.evaluate(() => { const st = document.getElementById('stage'); const p = [...document.querySelectorAll('.doc p, .doc h1')].find(e => { const r = e.getBoundingClientRect(); return r.width && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }); return st.clientHeight > innerHeight * 0.8 && !!p; });
+    const tp = await ctx.newPage();
+    await tp.goto(page_url);
+    await tp.waitForSelector('#grid .card');
+    await tp.click('#grid .card:has-text("Laporan Word Contoh") .card-open');
+    await tp.waitForSelector('.doc h1');
+    await tp.keyboard.press('m');
+    await tp.waitForTimeout(400);
+    ok(await tp.$('#reader.focus') && await visible(tp), 'mode fokus (M): isi tetap tampil memenuhi layar');
+    await tp.keyboard.press('m');
+    await tp.close();
+    const mc = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const mp = await mc.newPage();
+    await mp.goto(page_url);
+    await mp.setInputFiles('#file', path.join(dir, 'contoh.epub'));
+    await mp.waitForSelector('#reader:not([hidden]) .doc');
+    await mp.waitForTimeout(400);
+    ok(await mp.isVisible('#rd-title') && await mp.$eval('#rd-title', e => e.scrollWidth <= e.clientWidth + 1), 'ponsel: judul pendek di bilah atas tidak terpotong');
+    await mp.tap('#stage', { position: { x: 195, y: 420 } });
+    await mp.waitForTimeout(500);
+    ok(await mp.$('#reader.focus') && await visible(mp), 'ponsel: ketuk tengah menyembunyikan bilah, isi tetap tampil');
+    await mp.tap('#stage', { position: { x: 195, y: 420 } });
+    await mp.waitForTimeout(500);
+    ok(!(await mp.$('#reader.focus')) && await mp.isVisible('.rd-top'), 'ponsel: ketuk tengah lagi memunculkan bilah');
+    await mc.close();
   }
 
   /* ---------- catatan & ekspor Word ---------- */

@@ -179,7 +179,7 @@ dialog::backdrop{background:var(--scrim)}
 .rd-pos{font-size:12.5px;color:var(--ink-2);white-space:nowrap;min-width:92px;text-align:right;font-variant-numeric:tabular-nums}
 .reader.focus .rd-top,.reader.focus .rd-bottom{display:none}
 .focus-pos{position:absolute;left:0;right:0;bottom:max(4px,env(safe-area-inset-bottom));text-align:center;font-size:11.5px;color:var(--page-muted);pointer-events:none;font-variant-numeric:tabular-nums}
-.stage{position:relative;overflow:hidden;min-height:0}
+.stage{position:relative;overflow:hidden;min-height:0;grid-row:2}
 .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--page-muted);font-size:14px;gap:10px;align-content:center;justify-items:center}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--page-line);border-top-color:var(--accent);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -385,6 +385,7 @@ dialog:has(.note-ed){width:min(600px,calc(100vw - 32px))}
 }
 @media (max-width:420px){
   .rd-top .icon-btn{width:36px}
+  #rd-search,#rd-tr,#rd-mark{display:none}
 }
 @media print{
   .rd-top,.rd-bottom,.panel,.pop,.tts{display:none!important}

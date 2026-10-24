@@ -417,6 +417,8 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
+      { label: 'Cari di dokumen', icon: 'search', run: () => openPanel('search') },
+      { label: $('#rd-mark').getAttribute('aria-pressed') === 'true' ? 'Hapus penanda halaman ini' : 'Tandai halaman ini', icon: 'bookmark', run: toggleMark },
       { label: 'Catatan', icon: 'note', run: () => openPanel('notes') },
       { label: 'Terjemahkan ke bahasa Indonesia', icon: 'translate', run: () => Translate.open() },
       { label: 'Bacakan', icon: 'speak', run: () => TTS.toggle() },
@@ -682,10 +684,13 @@ const Translate = (() => {
     return out;
   }
   const API = () => typeof self.Translator !== 'undefined' && self.Translator?.create ? self.Translator : null;
+  /* model bawaan Chrome kadang perlu diunduh dulu; tanpa internet janji itu tak pernah selesai */
+  const timeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('waktu habis')), ms))]);
   async function detect(text) {
     try {
-      if (typeof self.LanguageDetector !== 'undefined') {
-        const det = await self.LanguageDetector.create();
+      // pendeteksi bahasa hanya dipakai bila modelnya sudah ada; jangan menunggu unduhan
+      if (typeof self.LanguageDetector !== 'undefined' && await timeout(self.LanguageDetector.availability(), 3000) === 'available') {
+        const det = await timeout(self.LanguageDetector.create(), 5000);
         const [best] = await det.detect(text.slice(0, 2000));
         if (best && best.confidence > 0.5 && best.detectedLanguage !== 'und') return best.detectedLanguage.split('-')[0];
       }
@@ -695,9 +700,17 @@ const Translate = (() => {
   async function tool(src, onProgress) {
     if (tools.has(src)) return tools.get(src);
     const T = API();
-    const avail = await T.availability({ sourceLanguage: src, targetLanguage: 'id' });
+    const avail = await timeout(T.availability({ sourceLanguage: src, targetLanguage: 'id' }), 5000);
     if (avail === 'unavailable' || avail === 'no') return null;
-    const t = await T.create({ sourceLanguage: src, targetLanguage: 'id', monitor(m) { m.addEventListener('downloadprogress', e => onProgress(e.loaded)); } });
+    if (avail !== 'available' && !navigator.onLine) throw new Error('offline');
+    // unduhan model boleh lama selama masih bergerak; berhenti bila 30 detik tanpa kemajuan
+    let id, fail;
+    const poke = () => { clearTimeout(id); id = setTimeout(() => fail(new Error('macet')), 30000); };
+    const stall = new Promise((_, rej) => { fail = rej; });
+    poke();
+    let t;
+    try { t = await Promise.race([stall, T.create({ sourceLanguage: src, targetLanguage: 'id', monitor(m) { m.addEventListener('downloadprogress', e => { poke(); onProgress(e.loaded); }); } })]); }
+    finally { clearTimeout(id); fail = () => {}; }
     tools.set(src, t);
     return t;
   }
@@ -726,21 +739,27 @@ const Translate = (() => {
       btn('Buka di Google Terjemahan', () => { toGoogle(); close(); }, 'primary');
       return;
     }
+    body.innerHTML = '<div class="tr-msg">Menyiapkan penerjemah…</div>';
+    const g = btn('Buka di Google Terjemahan', toGoogle);
     const src = await detect(all);
     if (my !== run) return;
+    body.textContent = ''; g.remove();
     if (src === 'id' || src === 'ms') { body.innerHTML = '<div class="tr-msg">Teks ini sudah berbahasa Indonesia.</div>'; btn('Tutup', close, 'primary'); return; }
     const items = parts.map(p => {
       const it = el('div', { class: 'tr-item' }, el('div', { class: 'src', text: p.length > 240 ? p.slice(0, 240) + '…' : p }), el('div', { class: 'dst wait', text: 'Menerjemahkan…' }));
       body.append(it);
       return it;
     });
-    let t;
+    let t, why = '';
     try {
       t = await tool(src, loaded => { if (my === run) items[0].lastChild.textContent = `Mengunduh model terjemahan… ${Math.round(loaded * 100)}%`; });
-    } catch (e) { t = null; console.warn('penerjemah', e); }
+    } catch (e) { t = null; why = e.message; console.warn('penerjemah', e); }
     if (my !== run) return;
     if (!t) {
-      body.innerHTML = `<div class="tr-msg"><p>Penerjemah bawaan belum bisa menerjemahkan dari bahasa ini (${esc(src)}) ke bahasa Indonesia di perangkat ini.</p><p>Buka di Google Terjemahan? <b>Teks akan dikirim ke Google.</b></p></div>`;
+      const reason = why === 'offline' || why === 'macet'
+        ? 'Penerjemah bawaan perlu mengunduh model bahasa satu kali, dan itu butuh internet. Sambungkan ke internet lalu coba lagi; setelah itu terjemahan bisa dipakai tanpa internet.'
+        : why ? 'Penerjemah bawaan peramban tidak merespons.' : `Penerjemah bawaan belum bisa menerjemahkan dari bahasa ini (${esc(src)}) ke bahasa Indonesia di perangkat ini.`;
+      body.innerHTML = `<div class="tr-msg"><p>${reason}</p><p>Buka di Google Terjemahan? <b>Teks akan dikirim ke Google.</b></p></div>`;
       btn('Tutup', close);
       btn('Buka di Google Terjemahan', () => { toGoogle(); close(); }, 'primary');
       return;

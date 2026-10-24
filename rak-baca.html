@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wsr+6EbdeuoOehKFdADz9e2+woiyIIBYHxt8YTldkc0=' 'wasm-unsafe-eval' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data: blob:; connect-src data: blob:; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-m6eORgRHRZ2ba2vZMiE7495JhTNwBswpgzQREAWZWyE=' 'wasm-unsafe-eval' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data: blob:; connect-src data: blob:; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'">
 <meta name="color-scheme" content="light dark">
 <meta name="version" content="1.0.2">
 <meta name="description" content="Rak Baca: pembaca dokumen universal tanpa internet. Buka PDF, EPUB, MOBI, FB2, DOCX, ODT, RTF, TXT, Markdown, HTML, CSV, gambar, dan komik langsung di peramban.">
@@ -179,7 +179,7 @@ dialog::backdrop{background:var(--scrim)}
 .rd-pos{font-size:12.5px;color:var(--ink-2);white-space:nowrap;min-width:92px;text-align:right;font-variant-numeric:tabular-nums}
 .reader.focus .rd-top,.reader.focus .rd-bottom{display:none}
 .focus-pos{position:absolute;left:0;right:0;bottom:max(4px,env(safe-area-inset-bottom));text-align:center;font-size:11.5px;color:var(--page-muted);pointer-events:none;font-variant-numeric:tabular-nums}
-.stage{position:relative;overflow:hidden;min-height:0}
+.stage{position:relative;overflow:hidden;min-height:0;grid-row:2}
 .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--page-muted);font-size:14px;gap:10px;align-content:center;justify-items:center}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--page-line);border-top-color:var(--accent);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -385,6 +385,7 @@ dialog:has(.note-ed){width:min(600px,calc(100vw - 32px))}
 }
 @media (max-width:420px){
   .rd-top .icon-btn{width:36px}
+  #rd-search,#rd-tr,#rd-mark{display:none}
 }
 @media print{
   .rd-top,.rd-bottom,.panel,.pop,.tts{display:none!important}
@@ -1477,7 +1478,7 @@ async function loadPdf(file, hooks) {
   return {
     kind: 'fixed', format: 'pdf', pdf, lib, toc,
     title: (typeof info.Title === 'string' && info.Title.trim().length > 1 && !/^(untitled|microsoft word|document\d*)/i.test(info.Title.trim())) ? info.Title.trim() : niceTitle(file.name),
-    author: typeof info.Author === 'string' ? info.Author.trim() : '',
+    author: typeof info.Author === 'string' && !/^(anonymous|unknown|user|admin(istrator)?|owner)$/i.test(info.Author.trim()) ? info.Author.trim() : '',
     lang: typeof info.Language === 'string' ? info.Language : '',
     pageCount: n, unit: 96 / 72, hasText: true,
     size: i => sizes[i] || sizes[0],
@@ -1677,11 +1678,22 @@ async function loadHtml(bytes, file) {
   }, [{ frag }]);
 }
 async function loadMd(text, file) {
+  // front matter YAML (Pandoc, Obsidian, Jekyll): ambil judul/penulis/bahasa, jangan ditampilkan
+  const meta = {};
+  text = text.replace(/^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/, (m, body) => {
+    // hanya bila isinya memang berbentuk YAML; garis --- biasa di awal dokumen dibiarkan
+    if (!body.split(/\r?\n/).every(l => !l.trim() || /^([\w-]+\s*:|\s+\S|\s*-\s|#)/.test(l))) return m;
+    for (const line of body.split(/\r?\n/)) {
+      const kv = /^(title|author|lang|language)\s*:\s*(.+?)\s*$/i.exec(line);
+      if (kv) meta[kv[1].toLowerCase()] = kv[2].replace(/^(["'])(.*)\1$/, '$2');
+    }
+    return '';
+  });
   const html = mdToHtml(text);
   const d = new DOMParser().parseFromString('<!doctype html><body>' + html, 'text/html');
   const frag = sanitize(d.body, { prefix: 'x-' });
   const h1 = frag.querySelector('h1');
-  return buildFlow({ format: 'md', title: (h1 && txt(h1).slice(0, 140)) || niceTitle(file.name), author: '' }, [{ frag }]);
+  return buildFlow({ format: 'md', title: (meta.title || (h1 && txt(h1)) || '').slice(0, 140) || niceTitle(file.name), author: meta.author || '', lang: meta.lang || meta.language || '' }, [{ frag }]);
 }
 const CHAPTER = /^\s*(bab|chapter|bagian|part|buku|book|jilid|prolog|prologue|epilog|epilogue|kata pengantar|pengantar|pendahuluan|penutup|lampiran|daftar pustaka|appendix|introduction|preface)\b[^\n]{0,80}$/i;
 function textToFrag(text) {
@@ -3827,6 +3839,8 @@ const Reader = (() => {
       { label: 'Unduh berkas asli', icon: 'download', run: () => Shelf.downloadFile(book) },
       doc?.kind === 'flow' && !doc.scrollOnly ? { label: layoutOf(Settings.all()) === '2' ? 'Tampilkan 1 kolom' : 'Tampilkan 2 kolom', icon: 'toc', run: toggleCols } : null,
       { label: $('#reader').classList.contains('focus') ? 'Tampilkan bilah' : 'Mode fokus (sembunyikan bilah)', icon: 'full', run: toggleFocus },
+      { label: 'Cari di dokumen', icon: 'search', run: () => openPanel('search') },
+      { label: $('#rd-mark').getAttribute('aria-pressed') === 'true' ? 'Hapus penanda halaman ini' : 'Tandai halaman ini', icon: 'bookmark', run: toggleMark },
       { label: 'Catatan', icon: 'note', run: () => openPanel('notes') },
       { label: 'Terjemahkan ke bahasa Indonesia', icon: 'translate', run: () => Translate.open() },
       { label: 'Bacakan', icon: 'speak', run: () => TTS.toggle() },
@@ -4092,10 +4106,13 @@ const Translate = (() => {
     return out;
   }
   const API = () => typeof self.Translator !== 'undefined' && self.Translator?.create ? self.Translator : null;
+  /* model bawaan Chrome kadang perlu diunduh dulu; tanpa internet janji itu tak pernah selesai */
+  const timeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('waktu habis')), ms))]);
   async function detect(text) {
     try {
-      if (typeof self.LanguageDetector !== 'undefined') {
-        const det = await self.LanguageDetector.create();
+      // pendeteksi bahasa hanya dipakai bila modelnya sudah ada; jangan menunggu unduhan
+      if (typeof self.LanguageDetector !== 'undefined' && await timeout(self.LanguageDetector.availability(), 3000) === 'available') {
+        const det = await timeout(self.LanguageDetector.create(), 5000);
         const [best] = await det.detect(text.slice(0, 2000));
         if (best && best.confidence > 0.5 && best.detectedLanguage !== 'und') return best.detectedLanguage.split('-')[0];
       }
@@ -4105,9 +4122,17 @@ const Translate = (() => {
   async function tool(src, onProgress) {
     if (tools.has(src)) return tools.get(src);
     const T = API();
-    const avail = await T.availability({ sourceLanguage: src, targetLanguage: 'id' });
+    const avail = await timeout(T.availability({ sourceLanguage: src, targetLanguage: 'id' }), 5000);
     if (avail === 'unavailable' || avail === 'no') return null;
-    const t = await T.create({ sourceLanguage: src, targetLanguage: 'id', monitor(m) { m.addEventListener('downloadprogress', e => onProgress(e.loaded)); } });
+    if (avail !== 'available' && !navigator.onLine) throw new Error('offline');
+    // unduhan model boleh lama selama masih bergerak; berhenti bila 30 detik tanpa kemajuan
+    let id, fail;
+    const poke = () => { clearTimeout(id); id = setTimeout(() => fail(new Error('macet')), 30000); };
+    const stall = new Promise((_, rej) => { fail = rej; });
+    poke();
+    let t;
+    try { t = await Promise.race([stall, T.create({ sourceLanguage: src, targetLanguage: 'id', monitor(m) { m.addEventListener('downloadprogress', e => { poke(); onProgress(e.loaded); }); } })]); }
+    finally { clearTimeout(id); fail = () => {}; }
     tools.set(src, t);
     return t;
   }
@@ -4136,21 +4161,27 @@ const Translate = (() => {
       btn('Buka di Google Terjemahan', () => { toGoogle(); close(); }, 'primary');
       return;
     }
+    body.innerHTML = '<div class="tr-msg">Menyiapkan penerjemah…</div>';
+    const g = btn('Buka di Google Terjemahan', toGoogle);
     const src = await detect(all);
     if (my !== run) return;
+    body.textContent = ''; g.remove();
     if (src === 'id' || src === 'ms') { body.innerHTML = '<div class="tr-msg">Teks ini sudah berbahasa Indonesia.</div>'; btn('Tutup', close, 'primary'); return; }
     const items = parts.map(p => {
       const it = el('div', { class: 'tr-item' }, el('div', { class: 'src', text: p.length > 240 ? p.slice(0, 240) + '…' : p }), el('div', { class: 'dst wait', text: 'Menerjemahkan…' }));
       body.append(it);
       return it;
     });
-    let t;
+    let t, why = '';
     try {
       t = await tool(src, loaded => { if (my === run) items[0].lastChild.textContent = `Mengunduh model terjemahan… ${Math.round(loaded * 100)}%`; });
-    } catch (e) { t = null; console.warn('penerjemah', e); }
+    } catch (e) { t = null; why = e.message; console.warn('penerjemah', e); }
     if (my !== run) return;
     if (!t) {
-      body.innerHTML = `<div class="tr-msg"><p>Penerjemah bawaan belum bisa menerjemahkan dari bahasa ini (${esc(src)}) ke bahasa Indonesia di perangkat ini.</p><p>Buka di Google Terjemahan? <b>Teks akan dikirim ke Google.</b></p></div>`;
+      const reason = why === 'offline' || why === 'macet'
+        ? 'Penerjemah bawaan perlu mengunduh model bahasa satu kali, dan itu butuh internet. Sambungkan ke internet lalu coba lagi; setelah itu terjemahan bisa dipakai tanpa internet.'
+        : why ? 'Penerjemah bawaan peramban tidak merespons.' : `Penerjemah bawaan belum bisa menerjemahkan dari bahasa ini (${esc(src)}) ke bahasa Indonesia di perangkat ini.`;
+      body.innerHTML = `<div class="tr-msg"><p>${reason}</p><p>Buka di Google Terjemahan? <b>Teks akan dikirim ke Google.</b></p></div>`;
       btn('Tutup', close);
       btn('Buka di Google Terjemahan', () => { toGoogle(); close(); }, 'primary');
       return;

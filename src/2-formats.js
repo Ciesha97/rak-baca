@@ -261,7 +261,7 @@ async function loadPdf(file, hooks) {
   return {
     kind: 'fixed', format: 'pdf', pdf, lib, toc,
     title: (typeof info.Title === 'string' && info.Title.trim().length > 1 && !/^(untitled|microsoft word|document\d*)/i.test(info.Title.trim())) ? info.Title.trim() : niceTitle(file.name),
-    author: typeof info.Author === 'string' ? info.Author.trim() : '',
+    author: typeof info.Author === 'string' && !/^(anonymous|unknown|user|admin(istrator)?|owner)$/i.test(info.Author.trim()) ? info.Author.trim() : '',
     lang: typeof info.Language === 'string' ? info.Language : '',
     pageCount: n, unit: 96 / 72, hasText: true,
     size: i => sizes[i] || sizes[0],
@@ -461,11 +461,22 @@ async function loadHtml(bytes, file) {
   }, [{ frag }]);
 }
 async function loadMd(text, file) {
+  // front matter YAML (Pandoc, Obsidian, Jekyll): ambil judul/penulis/bahasa, jangan ditampilkan
+  const meta = {};
+  text = text.replace(/^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/, (m, body) => {
+    // hanya bila isinya memang berbentuk YAML; garis --- biasa di awal dokumen dibiarkan
+    if (!body.split(/\r?\n/).every(l => !l.trim() || /^([\w-]+\s*:|\s+\S|\s*-\s|#)/.test(l))) return m;
+    for (const line of body.split(/\r?\n/)) {
+      const kv = /^(title|author|lang|language)\s*:\s*(.+?)\s*$/i.exec(line);
+      if (kv) meta[kv[1].toLowerCase()] = kv[2].replace(/^(["'])(.*)\1$/, '$2');
+    }
+    return '';
+  });
   const html = mdToHtml(text);
   const d = new DOMParser().parseFromString('<!doctype html><body>' + html, 'text/html');
   const frag = sanitize(d.body, { prefix: 'x-' });
   const h1 = frag.querySelector('h1');
-  return buildFlow({ format: 'md', title: (h1 && txt(h1).slice(0, 140)) || niceTitle(file.name), author: '' }, [{ frag }]);
+  return buildFlow({ format: 'md', title: (meta.title || (h1 && txt(h1)) || '').slice(0, 140) || niceTitle(file.name), author: meta.author || '', lang: meta.lang || meta.language || '' }, [{ frag }]);
 }
 const CHAPTER = /^\s*(bab|chapter|bagian|part|buku|book|jilid|prolog|prologue|epilog|epilogue|kata pengantar|pengantar|pendahuluan|penutup|lampiran|daftar pustaka|appendix|introduction|preface)\b[^\n]{0,80}$/i;
 function textToFrag(text) {
